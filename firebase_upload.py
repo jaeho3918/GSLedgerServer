@@ -33,8 +33,25 @@ chrome_option.add_argument("start-maximized")
 chrome_option.add_argument("disable-infobars")
 chrome_option.add_argument("--disable-extensions")
 
-driver = webdriver.Chrome(executable_path=f'./chromedriver.exe', chrome_options=chrome_option)
+driver = webdriver.Chrome(executable_path=f'./chromedriver_win72.exe', chrome_options=chrome_option)
 
+try:
+    # driver.get("https://www.naver.com")
+
+    driver.get("https://gsledger-29cad.firebaseapp.com/")
+    
+    frame_size = driver.find_elements_by_tag_name("iframe")
+    
+    # driver.switch_to(1)
+    print(driver.page_source)
+    # driver.switch_to.default_content()
+        
+
+except:
+    pass
+
+driver.quit()
+driver.close()
 
 def upload():
     cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json")
@@ -42,7 +59,7 @@ def upload():
     ref = db.reference("/REAL")
     readJson = json.load('csv_data.json')
     ref.set(readJson)
-
+    
     # if '__name__' == '__main__':
     _path = '.'  # window '.'   # linux '/home/gah/gana_server'
     # data(_path)  # crawler to homepage(inv...)

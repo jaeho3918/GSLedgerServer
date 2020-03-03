@@ -10,6 +10,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 import json
 import datetime
+import time
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
@@ -96,8 +97,8 @@ if __name__ == "__main__":
     sched.start()
     sched.add_job(data, 'cron', second='*/18', day_of_week='mon-fri', id="data_week")  # second='*/21'
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', day_of_week='sat', second='18', id="data_sat")
-    sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
-    sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")
+    # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
+    # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")
     print('scheduler start')
     
     while True:

@@ -39,24 +39,28 @@ driver = webdriver.Chrome(executable_path=f'./chromedriver_win72.exe', chrome_op
 
 driver.get("https://gsledger-29cad.firebaseapp.com/")
 
-frame1 = driver.find_elements_by_tag_name("iframe")
+element = driver.find("/html/body/div[2]/div[1]/div[2]/div[1]/div/table/tr[1]/td[2]/div/div[2]/div[1]/div[2]/div/div[4]/div[2]")
 
-for idx1, iframe1 in enumerate(frame1):
-    driver.switch_to.frame(idx1)
-    frame2 = driver.find_elements_by_tag_name("iframe")
-    for idx2, iframe2 in enumerate(frame2):
-        driver.switch_to.frame(idx2)
-        print(f"@@@{idx1}@{idx2}@@@", driver.page_source)
-        frame3 = driver.find_elements_by_tag_name("iframe")
-        for idx3, iframe3 in enumerate(frame3):
-            driver.switch_to.frame(idx3)
-            print(f"@@@{idx1}@{idx2}@{idx3}@@@", driver.page_source)
-            driver.switch_to.parent_frame()
-        driver.switch_to.parent_frame()
-    driver.switch_to.parent_frame()
+with open("test.text", "w") as f:
+    f.write(driver.page_source)
+
+# for idx1, iframe1 in enumerate(frame1):
+#     driver.switch_to.frame(idx1)
+#     frame2 = driver.find_elements_by_tag_name("iframe")
+#     for idx2, iframe2 in enumerate(frame2):
+#         driver.switch_to.frame(idx2)
+#         print(f"@@@{idx1}@{idx2}@@@", driver.page_source)
+#         frame3 = driver.find_elements_by_tag_name("iframe")
+#         for idx3, iframe3 in enumerate(frame3):
+#             driver.switch_to.frame(idx3)
+#             print(f"@@@{idx1}@{idx2}@{idx3}@@@", driver.page_source)
+#             driver.switch_to.parent_frame()
+#         driver.switch_to.parent_frame()
+#     driver.switch_to.parent_frame()
 
 driver.close()
 driver.quit()
+
 
 def upload():
     cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json")
@@ -64,7 +68,7 @@ def upload():
     ref = db.reference("/REAL")
     readJson = json.load('csv_data.json')
     ref.set(readJson)
-
+    
     # if '__name__' == '__main__':
     _path = '.'  # window '.'   # linux '/home/gah/gana_server'
     # data(_path)  # crawler to homepage(inv...)

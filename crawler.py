@@ -78,11 +78,14 @@ def data():
         logger.info("Crawler ERROR")
 
     real_result["DATE"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S utc')
+    try:
+        last_buf = real_result.copy()
+        last_buf.pop("DATE")
+        last_buf.pop("YESAU")
+        last_buf.pop("YESAG")
+    except:
+        logger.info("Crawler ERROR")
 
-    last_buf = real_result.copy()
-    last_buf.pop("DATE")
-    last_buf.pop("YESAU")
-    last_buf.pop("YESAG")
 
     last_date = datetime.datetime.now().strftime('%Y%m%d')
     last_result[last_date] = last_buf

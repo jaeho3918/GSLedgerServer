@@ -112,7 +112,7 @@ if __name__ == "__main__":
     data()
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
-    sched.add_job(data, 'cron', minute='*/18', day_of_week='mon-fri', id="data_week")  # second='*/21'
+    sched.add_job(data, 'cron', second='*/18', day_of_week='mon-fri', id="data_week")  # second='*/21'
     sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")

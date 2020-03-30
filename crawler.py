@@ -15,8 +15,8 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
 
 URLS = {
-    "AU": "https://kr.investing.com/currencies/xau-usd-historical-data",
-    "AG": "https://kr.investing.com/currencies/xag-usd-historical-data",
+    "AU": "https://kr.investing.com/commodities/gold-historical-data",#https://kr.investing.com/currencies/xau-usd-historical-data
+    "AG": "https://kr.investing.com/commodities/silver-historical-data",#https://kr.investing.com/currencies/xag-usd-historical-data
     "CUR": 'https://kr.investing.com/currencies/exchange-rates-table',
     "CNY": 'https://kr.investing.com/currencies/usd-cny-historical-data',
     "INR": 'https://kr.investing.com/currencies/usd-inr-historical-data'

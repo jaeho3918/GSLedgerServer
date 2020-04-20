@@ -119,7 +119,7 @@ def data():
     # print(real_result, last_result)
     
     try:
-        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json") # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json") # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
         print("Success Firebase Upload")
     except:

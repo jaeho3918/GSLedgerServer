@@ -79,14 +79,15 @@ def data():
         logger.info("Crawler Start")
         for key, item in URLS.items():
             rad = random.randint(18, 24)
-            print(key, rad)
+            # print(key, rad)
+            print(key, datetime.now())
             time.sleep(5 + rad)
             html = requests.get(item, headers=headers).text
             xpath_data = etree.HTML(html)
             for idx, xpath in enumerate(XPATHS[key]):
                 text = xpath_data.xpath(xpath)
                 if key == "CUR":
-                    print(text[0].strip())
+                    # print(text[0].strip())
                     real_result[CUR_TABLE[idx]] = float(text[0].strip().replace(",", ""))
                 
                 elif len(key) == 2:
@@ -96,7 +97,7 @@ def data():
                         real_result[key] = float(text[0].strip().replace(",", ""))
                 
                 else:
-                    print(float(text[0].strip().replace(",", "")))
+                    # print(float(text[0].strip().replace(",", "")))
                     real_result[key] = float(text[0].strip().replace(",", ""))
     except:
         logger.info("Crawler ERROR")
@@ -116,10 +117,10 @@ def data():
     last_date = closeTime(now)
     last_result[last_date] = last_buf
     
-    # print(real_result, last_result)
+#     # print(real_result, last_result)
     
     try:
-        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json") # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json") # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
         print("Success Firebase Upload")
     except:

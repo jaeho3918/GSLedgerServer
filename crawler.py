@@ -107,6 +107,7 @@ def data():
         logger.info("Crawler Start")
         for key, item in URLS.items():
             rad = random.randint(33, 60)
+            # rad = 8
             # print(key, rad)
             print(key, datetime.utcnow())
             time.sleep(5 + rad)
@@ -170,8 +171,8 @@ if __name__ == "__main__":
     data()
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
-    sched.add_job(data, 'cron', minute='*/11', hour='0-21', day_of_week='mon-fri', id="day")  # second='*/21'
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun-fri', id="day")  # second='*/21'
+    sched.add_job(data, 'cron', minute='0-59/11', hour='0-23', day_of_week='mon-fri', id="day")
+    # sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun-fri', id="night")
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")

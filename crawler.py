@@ -78,9 +78,9 @@ def data():
     try:
         logger.info("Crawler Start")
         for key, item in URLS.items():
-            rad = random.randint(18, 24)
+            rad = random.randint(36, 50)
             # print(key, rad)
-            print(key, datetime.now())
+            print(key, datetime.utcnow())
             time.sleep(5 + rad)
             html = requests.get(item, headers=headers).text
             xpath_data = etree.HTML(html)

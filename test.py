@@ -3,6 +3,26 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
+def closeTime(now):
+    closeTime_dict = {
+        "year": now.year,
+        "month": now.month,
+        "day": now.day,
+        "hour": 21,
+        "minute": 0,
+        "second": 0,
+        "weekday": now.weekday()
+    }
+    # closeTime_dict[ "value"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day'] + 1}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}/{closeTime_dict['weekday']}"
+    closeTime_dict[
+        "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
+    closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
+    if now >= closeTime_dict["value"]: #
+        return f"{now.year}/{now.month}/{now.day+1}"
+    else:
+        return f"{now.year}/{now.month}/{now.day}"
+
+
 while 1:
     now = datetime.utcnow()
     
@@ -57,16 +77,23 @@ while 1:
     
     targetTime = datetime.strptime(f"{now.year}/{now.month}/{now.day}/21/1/0", '%Y/%m/%d/%H/%M/%S')
 
-    print("targetTime ",targetTime)
-    
-    print("closeTime ",closeTime_dict["value"])
-    
-    if targetTime >= closeTime_dict["value"]: #
-        print(f"{now.year}/{now.month}/{now.day}  ->  {now.year}/{now.month}/{now.day+1}")
-    else:
-        print(f"{now.year}/{now.month}/{now.day}  ->  {now.year}/{now.month}/{now.day}")
+    # targetTime = datetime.utcnow()
+
+    print("targetTime ",now)
+    #
+    # print("closeTime ",closeTime_dict["value"])
+    #
+    # if targetTime >= closeTime_dict["value"]: #
+    #     print(f"{now.year}/{now.month}/{now.day}  ->  {now.year}/{now.month}/{now.day+1}")
+    # else:
+    #     print(f"{now.year}/{now.month}/{now.day}  ->  {now.year}/{now.month}/{now.day}")
         
     # print()
     # print(targetTime >= closeTime_dict["value"])
-    
+
+    print(closeTime(now))
     time.sleep(1)
+
+
+
+

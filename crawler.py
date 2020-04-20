@@ -26,6 +26,7 @@ URLS = {
 }
 
 XPATHS = {
+    "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
     "AU": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
     "AG": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
@@ -38,7 +39,6 @@ XPATHS = {
             "/html/body/div[5]/section/table/tbody/tr[1]/td[9]/text()"
             ],
     "CNY": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()"],
-    "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()']
 }
 
 CUR_TABLE = ["EUR", "GBP", "JPY", "CAD", "AUD", "KRW"]
@@ -55,11 +55,30 @@ fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 
 
+def closeTime(now):
+    closeTime_dict = {
+        "year": now.year,
+        "month": now.month,
+        "day": now.day,
+        "hour": 21,
+        "minute": 0,
+        "second": 0,
+        "weekday": now.weekday()
+    }
+    # closeTime_dict[ "value"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day'] + 1}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}/{closeTime_dict['weekday']}"
+    closeTime_dict[
+        "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
+    closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
+    if now >= closeTime_dict["value"]: #
+        return f"{now.year}/{now.month}/{now.day+1}"
+    else:
+        return f"{now.year}/{now.month}/{now.day}"
+
 def data():
     try:
         logger.info("Crawler Start")
         for key, item in URLS.items():
-            rad = random.randint(1, 15)
+            rad = random.randint(18, 24)
             print(key, rad)
             time.sleep(5 + rad)
             html = requests.get(item, headers=headers).text
@@ -83,8 +102,13 @@ def data():
         logger.info("Crawler ERROR")
     
     now = datetime.utcnow()
+
+
+
+
+
     
-    real_result["DATE"] = datetime.datetime.now().timestamp()
+    real_result["DATE"] = datetime.utcnow().timestamp()
     try:
         last_buf = real_result.copy()
         last_buf.pop("DATE")
@@ -93,13 +117,13 @@ def data():
     except:
         logger.info("Crawler ERROR")
     
-    last_date = datetime.datetime.now().strftime('%Y%m%d')
+    last_date = closeTime(now)
     last_result[last_date] = last_buf
     
     # print(real_result, last_result)
     
     try:
-        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-247692c0a9.json")
+        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")
         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
     
     except:
@@ -115,14 +139,15 @@ def data():
 
 
 if __name__ == "__main__":
-    data()
+    # data()
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
-    sched.add_job(data, 'cron', minute='*/3', day_of_week='mon-fri', id="data_week")  # second='*/21'
+    sched.add_job(data, 'cron', minute='*/6', hour='0-21', day_of_week='mon-fri', id="day")  # second='*/21'
+    sched.add_job(data, 'cron', minute='0-59/6', hour='22-23', day_of_week='sun', id="sundayNight")  # second='*/21'
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")
-    # print('scheduler start')
-    #
-    # while True:
-    #     time.sleep(29)
+    print('scheduler start')
+
+    while True:
+        time.sleep(18)

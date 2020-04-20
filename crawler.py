@@ -16,21 +16,21 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
 
 URLS = {
+    "AU": "https://www.investing.com/commodities/gold-historical-data",
     # https://kr.investing.com/currencies/xau-usd-historical-data
     "AG": "https://kr.investing.com/commodities/silver-historical-data",
     # https://kr.investing.com/currencies/xag-usd-historical-data
     "CUR": 'https://kr.investing.com/currencies/exchange-rates-table',
     "CNY": 'https://kr.investing.com/currencies/usd-cny-historical-data',
-    "AU": "https://www.investing.com/commodities/gold-historical-data",
     "INR": 'https://kr.investing.com/currencies/usd-inr-historical-data'
 }
 
 XPATHS = {
-    "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
     "AU": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
     "AG": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
+    "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
     "CUR": ["/html/body/div[5]/section/table/tbody/tr[1]/td[3]/text()",
             "/html/body/div[5]/section/table/tbody/tr[1]/td[4]/text()",
             "/html/body/div[5]/section/table/tbody/tr[1]/td[5]/text()",
@@ -69,16 +69,43 @@ def closeTime(now):
     closeTime_dict[
         "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
     closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
+    
+    
     if now >= closeTime_dict["value"]: #
-        return f"{now.year}/{now.month}/{now.day+1}"
-    else:
-        return f"{now.year}/{now.month}/{now.day}"
+        buf_month = ""
+        buf_day = ""
+        
+        if now.month < 10:
+            buf_month = f"0{now.month}"
+        else:
+            buf_month = f"{now.month}"
 
+        if now.day+1 < 10:
+            buf_day = f"0{now.day+1}"
+        else:
+            buf_day = f"{now.day+1}"
+        
+        return f"{now.year}{buf_month}{buf_day}"
+    else:
+        buf_month = ""
+        buf_day = ""
+        
+        if now.month < 10:
+            buf_month = f"0{now.month}"
+        else:
+            buf_month = f"{now.month}"
+
+        if now.day < 10:
+            buf_day = f"0{now.day}"
+        else:
+            buf_day = f"{now.day}"
+
+        return f"{now.year}{buf_month}{buf_day}"
 def data():
     try:
         logger.info("Crawler Start")
         for key, item in URLS.items():
-            rad = random.randint(36, 50)
+            rad = random.randint(13, 18)
             # print(key, rad)
             print(key, datetime.utcnow())
             time.sleep(5 + rad)
@@ -105,6 +132,7 @@ def data():
     now = datetime.utcnow()
 
     real_result["DATE"] = datetime.utcnow().timestamp()
+    print(real_result)
 
     try:
         last_buf = real_result.copy()
@@ -116,6 +144,7 @@ def data():
     
     last_date = closeTime(now)
     last_result[last_date] = last_buf
+    print(last_result)
     
 #     # print(real_result, last_result)
     

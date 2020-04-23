@@ -11,6 +11,7 @@ import random
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
+REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
@@ -133,8 +134,15 @@ def data():
 
     now = datetime.utcnow()
 
+    real_result1 = real_result.copy()
+
     real_result["DATE"] = datetime.utcnow().timestamp()
     print(real_result)
+
+    now = datetime.utcnow()
+    real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
+    print(datetime.utcnow())
+    print(real_result1["DATE"])
 
     try:
         last_buf = real_result.copy()
@@ -160,6 +168,9 @@ def data():
 
     ref = db.reference(f"/{REALTIME_DB_PATH}")
     ref.update(real_result)
+
+    ref = db.reference(f"/{REALTIME1_DB_PATH}")
+    ref.update(real_result1)
 
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)

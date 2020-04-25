@@ -11,6 +11,7 @@ import random
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
+REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
@@ -69,27 +70,26 @@ def closeTime(now):
     closeTime_dict[
         "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
     closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
-    
-    
-    if now >= closeTime_dict["value"]: #
+
+    if now >= closeTime_dict["value"]:  #
         buf_month = ""
         buf_day = ""
-        
+
         if now.month < 10:
             buf_month = f"0{now.month}"
         else:
             buf_month = f"{now.month}"
 
-        if now.day+1 < 10:
-            buf_day = f"0{now.day+1}"
+        if now.day + 1 < 10:
+            buf_day = f"0{now.day + 1}"
         else:
-            buf_day = f"{now.day+1}"
-        
+            buf_day = f"{now.day + 1}"
+
         return f"{now.year}{buf_month}{buf_day}"
     else:
         buf_month = ""
         buf_day = ""
-        
+
         if now.month < 10:
             buf_month = f"0{now.month}"
         else:
@@ -101,11 +101,14 @@ def closeTime(now):
             buf_day = f"{now.day}"
 
         return f"{now.year}{buf_month}{buf_day}"
+
+
 def data():
     try:
         logger.info("Crawler Start")
         for key, item in URLS.items():
-            rad = random.randint(13, 18)
+            rad = random.randint(33, 60)
+            # rad = 8
             # print(key, rad)
             print(key, datetime.utcnow())
             time.sleep(5 + rad)
@@ -116,23 +119,30 @@ def data():
                 if key == "CUR":
                     # print(text[0].strip())
                     real_result[CUR_TABLE[idx]] = float(text[0].strip().replace(",", ""))
-                
+
                 elif len(key) == 2:
                     if idx == 1:
                         real_result[f"YES{key}"] = float(text[0].strip().replace(",", ""))
                     else:
                         real_result[key] = float(text[0].strip().replace(",", ""))
-                
+
                 else:
                     # print(float(text[0].strip().replace(",", "")))
                     real_result[key] = float(text[0].strip().replace(",", ""))
     except:
         logger.info("Crawler ERROR")
-    
+
     now = datetime.utcnow()
+
+    real_result1 = real_result.copy()
 
     real_result["DATE"] = datetime.utcnow().timestamp()
     print(real_result)
+
+    now = datetime.utcnow()
+    real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
+    print(datetime.utcnow())
+    print(real_result1["DATE"])
 
     try:
         last_buf = real_result.copy()
@@ -141,26 +151,30 @@ def data():
         last_buf.pop("YESAG")
     except:
         logger.info("Crawler ERROR")
-    
+
     last_date = closeTime(now)
     last_result[last_date] = last_buf
     print(last_result)
-    
-#     # print(real_result, last_result)
-    
+
+    #     # print(real_result, last_result)
+
     try:
-        cred = credentials.Certificate("./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json") # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+        cred = credentials.Certificate(
+            "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
         print("Success Firebase Upload")
     except:
         pass
-    
+
     ref = db.reference(f"/{REALTIME_DB_PATH}")
     ref.update(real_result)
-    
+
+    ref = db.reference(f"/{REALTIME1_DB_PATH}")
+    ref.update(real_result1)
+
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
-    
+
     logger.info("Crawler Upload")
 
 
@@ -168,8 +182,8 @@ if __name__ == "__main__":
     data()
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
-    sched.add_job(data, 'cron', minute='*/6', hour='0-21', day_of_week='mon-fri', id="day")  # second='*/21'
-    sched.add_job(data, 'cron', minute='0-59/6', hour='22-23', day_of_week='sun', id="sundayNight")  # second='*/21'
+    sched.add_job(data, 'cron', minute='0-59/11', hour='0-23', day_of_week='mon-fri', id="day")
+    # sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun-fri', id="night")
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")

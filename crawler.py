@@ -13,6 +13,8 @@ REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
 REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
 SHORTBUF_DB_PATH = "U6BUnY9WzFw7KZFEfg"
+LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
+
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
@@ -244,12 +246,76 @@ def getShortChartBuf():
     logger.info("Crawler Upload")
 
 
+def getLongChartBuf():
+    start_Date = 19920918
+    limit_len = 279
+
+    try:
+        cred = credentials.Certificate(
+            "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+        firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
+        print("Success Firebase Upload")
+    except:
+        pass
+
+    ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().start_at(str(start_Date))
+
+    list_query = ref.get()
+
+    print('query length', len(list_query))
+
+    # 가져온 데이터를 제한길이로 나눔
+    step = len(list_query) // limit_len
+    print(len(list_query) // limit_len)
+
+    ag_list = []
+    au_list = []
+    date_list = []
+
+    # 리스트 만들기
+    for date, items in dict(list_query).items():
+        date_list.append(date)
+        au_list.append(items["AU"])
+        ag_list.append(items["AG"])
+
+    # 마지막 날짜 가져오기
+    # ag_last = ag_list[:-1]
+    # au_last = au_list[:-1]
+    # date_last = date_list[:-1]
+
+    # 가져온 데이터를 스텝으로 줄이기 (-1: 마지막 날짜 제외)
+    ag_list = ag_list[:-1:step]
+    au_list = au_list[:-1:step]
+    date_list = date_list[:-1:step]
+
+    # 제한길이 -1 까지 리스트 줄이기(마지막 날짜가 들어갈 자리확보)
+    # while len(ag_list) != (limit_len - 1):
+    #     print(len(ag_list))
+    #     ag_list.pop(18)
+    #     au_list.pop(18)
+    #     date_list.pop(18)
+
+    # #마지막 날짜의 가격 합치기
+    # ag_list.append(ag_last)
+    # au_list.append(au_last)
+    # date_list.append(date_last)
+
+    # print(len(ag_list),ag_list)
+    # print(len(au_list),au_list)
+    # print(len(date_list),date_list)
+
+    db.reference(f"/{LONGBUF_DB_PATH}").set({"AU": au_list,
+                                             "AG": ag_list,
+                                             "DATE": date_list
+                                             })
+
 if __name__ == "__main__":
     # data()
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
     sched.add_job(data, 'cron', minute='0-59/11', hour='0-23', day_of_week='mon-fri', id="day")
     sched.add_job(getShortChartBuf, 'cron', minute='50', hour='23', day_of_week='mon-fri', id="shortChart")
+    sched.add_job(getLongChartBuf, 'cron', minute='50', hour='23', day_of_week='sat', id="longChart")
 
     # sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun-fri', id="night")
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")

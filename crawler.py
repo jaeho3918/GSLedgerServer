@@ -9,6 +9,7 @@ import time
 import logging
 import random
 
+
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
 REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
@@ -314,6 +315,7 @@ if __name__ == "__main__":
     sched = BackgroundScheduler(timezone="utc")
     sched.start()
     sched.add_job(data, 'cron', minute='0-59/11', hour='0-23', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun', id="day")
     sched.add_job(getShortChartBuf, 'cron', minute='50', hour='23', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='50', hour='23', day_of_week='sat', id="longChart")
 

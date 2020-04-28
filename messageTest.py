@@ -21,11 +21,7 @@ body = ""
 
 # price1 = 1.5
 
-price1 = 0.05
-
-price2 = 2.0
-
-price3 = 2.5
+price_list = [0.05, 2.0, 2.5]
 
 AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
 
@@ -35,34 +31,54 @@ AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
 
 title = f"Price Alert"
 
-if AU >= price1:
-    body += f"Gold : {ref['AU']} (+{str(AU)[:5]}%)"
+body_Slot = {}
 
-elif AU <= -1 * price1:
-    body += f"Gold : {ref['AU']} ({str(AU)[:5]}%)"
+for price in price_list:
+    if AU >= price:
+        body_Slot['AU'] = [ref['AU'], F"(+{str(AU)[:5]}%)"]
     
-if AG >= price1:
-    if body != "":
-        body += " & "
-    body += f"Silver: {ref['AG']} (+{str(AG)[:5]}%)"
+    elif AU <= -1 * price:
+        body_Slot['AU'] = [ref['AU'], F"({str(AU)[:5]}%)"]
+    
+    if AG >= price:
+        body_Slot['AG'] = [ref['AG'], F"(+{str(AG)[:5]}%)"]
+    
+    elif AG <= -1 * price:
+        body_Slot['AG'] = [ref['AG'], F"({str(AG)[:5]}%)"]
 
-elif AG <= -1 * price1:
-    if body != "":
-        body += " & "
-    body += f"Silver : {ref['AG']} ({str(AG)[:5]}%)"
+# for price in price_list:
+#
+#     if AU >= price:
+#         body += f"Gold : {ref['AU']} (+{str(AU)[:5]}%)"
+#
+#     elif AU <= -1 * price:
+#         body += f"Gold : {ref['AU']} ({str(AU)[:5]}%)"
+#
+#
+#     if AG >= price:
+#         if body != "":
+#             body += " & "
+#         body += f"Silver: {ref['AG']} (+{str(AG)[:5]}%)"
+#
+#     elif AG <= -1 * price:
+#         if body != "":
+#             body += " & "
+#         body += f"Silver : {ref['AG']} ({str(AG)[:5]}%)"
 
 # This registration token comes from the client FCM SDKs.
-# registration_token = 'ANDROID_CLIENT_TOKEN'
+registration_token = []
 
-topic = 'TEST'
+# topics = {"KRWLIVE","EURLIVE","GBPLIVE","AUDLIVE","CADLIVE","INRLIVE","JPYLIVE","CNYLIVE"}
+topic = "TEST"
+
 # See documentation on defining a message payload.
 message = messaging.Message(
     android=messaging.AndroidConfig(
-        ttl=timedelta(seconds=3600),
+        ttl=datetime.timedelta(seconds=3600),
         priority='normal',
         notification=messaging.AndroidNotification(
-            title=title,
-            body=body,
+            title='알림인데',
+            body='백그라운드 자비 좀',
             icon='',
             color='#f45342',
             sound='default'
@@ -72,8 +88,15 @@ message = messaging.Message(
         'score': '850',
         'time': '2:45',
     },
+    webpush=messaging.WebpushConfig(
+        notification=messaging.WebpushNotification(
+            title='웹 알림',
+            body='여긴 어떨까',
+            icon='',
+        ),
+    ),
     topic=topic
-    # token=registration_token
+    #token=registration_token
 )
 
 # Send a message to the device corresponding to the provided

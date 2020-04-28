@@ -19,13 +19,37 @@ print(ref)
 title = ""
 body = ""
 
-AG = (ref["AG"] - ref["YESAG"]) / ref["YESAG"] * 100
+# price1 = 1.5
 
-AU = (ref["AU"] - ref["YESAU"]) / ref["YESAU"] * 100
+price1 = 0.05
 
-title = f"AG & AU Price time{ref['DATE'][:16]}"
-body = f"{AG} & {AU}"
+price2 = 2.0
 
+price3 = 2.5
+
+AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
+
+AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
+
+# title = f"Price Alert : {ref['DATE'][:16]} UTC"
+
+title = f"Price Alert"
+
+if AU >= price1:
+    body += f"Gold : {ref['AU']} (+{str(AU)[:5]}%)"
+
+elif AU <= -1 * price1:
+    body += f"Gold : {ref['AU']} ({str(AU)[:5]}%)"
+    
+if AG >= price1:
+    if body != "":
+        body += " & "
+    body += f"Silver: {ref['AG']} (+{str(AG)[:5]}%)"
+
+elif AG <= -1 * price1:
+    if body != "":
+        body += " & "
+    body += f"Silver : {ref['AG']} ({str(AG)[:5]}%)"
 
 # This registration token comes from the client FCM SDKs.
 # registration_token = 'ANDROID_CLIENT_TOKEN'

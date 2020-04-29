@@ -16,7 +16,8 @@ ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
 
 print(ref)
 
-title = ""
+title = f"Price Alert"
+
 body = ""
 
 # price1 = 1.5
@@ -29,7 +30,6 @@ AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
 
 # title = f"Price Alert : {ref['DATE'][:16]} UTC"
 
-title = f"Price Alert"
 
 body_Slot = {}
 

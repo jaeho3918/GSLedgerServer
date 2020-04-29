@@ -15,6 +15,8 @@ LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
 REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
 SHORTBUF_DB_PATH = "U6BUnY9WzFw7KZFEfg"
 LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
+CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
+OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
 
 
 headers = {
@@ -179,6 +181,16 @@ def data():
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
 
+
+    light = encrypt(real_result1)   # "open_Database"     "decrypt_Database"
+
+    ref = db.reference(f"/{OPEN_REALDATA}")
+    ref.update(light["open_Database"])
+
+    ref = db.reference(f"/{CLOSE_REALDATA}")
+    ref.update(light["decrypt_Database"])
+
+
     logger.info("Crawler Upload")
 
 
@@ -244,7 +256,7 @@ def getShortChartBuf():
                                               "AG": ag_list[:-1],
                                               "DATE": date_list[:-1]
                                               })
-    logger.info("Crawler Upload")
+    logger.info("Short Chart Upload")
 
 
 def getLongChartBuf():
@@ -309,6 +321,48 @@ def getLongChartBuf():
                                              "AG": ag_list,
                                              "DATE": date_list
                                              })
+
+
+def encrypt(data_input: dict):
+    slot = {
+        "AU": 0,
+        "AG": 0,
+        "AUD": 0,
+        "CAD": 0,
+        "CNY": 0,
+        "EUR": 0,
+        "GBP": 0,
+        "INR": 0,
+        "JPY": 0,
+        "KRW": 0,
+        "YESAG": 0,
+        "YESAU": 0
+    }
+    date_slot = data_input["DATE"]
+    decrypt = {}
+    encrypt = {}
+
+    for key in slot.keys():
+        number6 = random.randint(1, random.randint(1, 5) ** 10)
+        floatNum1 = random.randint(0, 9)
+        floatNum2 = random.randint(0, 9)
+        floatNum3 = random.randint(0, 9)
+        floatNum4 = random.randint(0, 9)
+        floatNum5 = random.randint(0, 9)
+
+        slot[key] = f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}"
+
+    for key in slot.keys():
+        decrypt[key] = data_input[key] / float(slot[key])
+    decrypt["DATE"] = date_slot
+
+    for key in slot.keys():
+        encrypt[key] = decrypt[key] * float(slot[key])
+
+    slot["DATE"] = date_slot
+
+    return {"open_Database": slot, "decrypt_Database": decrypt}
+
 
 if __name__ == "__main__":
     # data()

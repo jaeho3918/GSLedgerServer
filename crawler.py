@@ -346,7 +346,7 @@ def encrypt(data_input: dict):
         floatNum4 = random.randint(0, 9)
         floatNum5 = random.randint(0, 9)
 
-        slot[key] = f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}"
+        slot[key] = float(f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}")
 
     for key in slot.keys():
         decrypt[key] = data_input[key] / float(slot[key])

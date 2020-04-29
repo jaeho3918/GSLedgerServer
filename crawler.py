@@ -9,14 +9,11 @@ import time
 import logging
 import random
 
-
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
 REALTIME1_DB_PATH = "v6WqgKE6RLT6JkFuBv"
 SHORTBUF_DB_PATH = "U6BUnY9WzFw7KZFEfg"
 LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
-CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
-OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
 
 
 headers = {
@@ -181,16 +178,6 @@ def data():
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
 
-
-    light = encrypt(real_result1)   # "open_Database"     "decrypt_Database"
-
-    ref = db.reference(f"/{OPEN_REALDATA}")
-    ref.update(light["open_Database"])
-
-    ref = db.reference(f"/{CLOSE_REALDATA}")
-    ref.update(light["decrypt_Database"])
-
-
     logger.info("Crawler Upload")
 
 
@@ -256,7 +243,7 @@ def getShortChartBuf():
                                               "AG": ag_list[:-1],
                                               "DATE": date_list[:-1]
                                               })
-    logger.info("Short Chart Upload")
+    logger.info("Crawler Upload")
 
 
 def getLongChartBuf():
@@ -322,54 +309,13 @@ def getLongChartBuf():
                                              "DATE": date_list
                                              })
 
-
-def encrypt(data_input: dict):
-    slot = {
-        "AU": 0,
-        "AG": 0,
-        "AUD": 0,
-        "CAD": 0,
-        "CNY": 0,
-        "EUR": 0,
-        "GBP": 0,
-        "INR": 0,
-        "JPY": 0,
-        "KRW": 0,
-        "YESAG": 0,
-        "YESAU": 0
-    }
-    date_slot = data_input["DATE"]
-    decrypt = {}
-    encrypt = {}
-
-    for key in slot.keys():
-        number6 = random.randint(1, random.randint(1, 5) ** 10)
-        floatNum1 = random.randint(0, 9)
-        floatNum2 = random.randint(0, 9)
-        floatNum3 = random.randint(0, 9)
-        floatNum4 = random.randint(0, 9)
-        floatNum5 = random.randint(0, 9)
-
-        slot[key] = f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}"
-
-    for key in slot.keys():
-        decrypt[key] = data_input[key] / float(slot[key])
-    decrypt["DATE"] = date_slot
-
-    for key in slot.keys():
-        encrypt[key] = decrypt[key] * float(slot[key])
-
-    slot["DATE"] = date_slot
-
-    return {"open_Database": slot, "decrypt_Database": decrypt}
-
-
 if __name__ == "__main__":
-    # data()
-    sched = BackgroundScheduler(timezone="utc")
-    sched.start()
-    sched.add_job(data, 'cron', minute='0-59/11', hour='0-23', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun', id="day")
+    data()
+    sched = BackgroundScheduler(timezone="UTC")
+    sched.add_job(data, 'cron', minute='*/11', hour='0-23', day_of_week='mon-fri', id="day")
+    # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
+
     sched.add_job(getShortChartBuf, 'cron', minute='50', hour='23', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='50', hour='23', day_of_week='sat', id="longChart")
 
@@ -377,7 +323,9 @@ if __name__ == "__main__":
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")
-    print('scheduler start')
+
+    print('scheduler start', datetime.utcnow())
+    sched.start()
 
     while True:
         time.sleep(18)

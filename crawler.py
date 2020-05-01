@@ -373,7 +373,7 @@ def message(topic_limit):
         title = f"Price Alert"
 
         price_list = [1.0, 2.0, 3.0]
-        price_list = [0.1, 0.2, 0.5]
+        price_list = [0.1, 1.0, 1.5]
 
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
@@ -446,9 +446,12 @@ def message(topic_limit):
     except:
         print("message error")
 
+
 def messageLimit():
     global topic_limit
     topic_limit = [False, False, False, False, False, False]
+    print("topic_limit at ", datetime.utcnow(), "  ", topic_limit)
+
 
 if __name__ == "__main__":
     # dd

@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import time
 import logging
 import random
+from firebase_admin import messaging
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
@@ -47,6 +48,8 @@ XPATHS = {
 }
 
 CUR_TABLE = ["EUR", "GBP", "JPY", "CAD", "AUD", "KRW"]
+
+topic_limit = [False, False, False, False, False, False]
 
 real_result = {}
 last_result = {}
@@ -179,7 +182,7 @@ def data():
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
 
-    light = encrypt(real_result1)   # "open_Database"     "decrypt_Database"
+    light = encrypt(real_result1)  # "open_Database"     "decrypt_Database"
 
     ref = db.reference(f"/{OPEN_REALDATA}")
     ref.update(light["open_Database"])
@@ -189,9 +192,11 @@ def data():
 
     logger.info("Crawler Upload")
 
+    global topic_limit
+    message(topic_limit)
+
 
 def getShortChartBuf():
-
     limit_len = 70
 
     try:
@@ -218,7 +223,7 @@ def getShortChartBuf():
 
     # 리스트 만들기
     for date, items in dict(list_query).items():
-        date_list.append(date)
+        date_list.append(date[0:3] + "/" + date[4:5] + "/" + date[6:7])
         au_list.append(items["AU"])
         ag_list.append(items["AG"])
 
@@ -357,12 +362,102 @@ def encrypt(data_input: dict):
 
     return {"open_Database": slot, "decrypt_Database": decrypt}
 
+
+def message(topic_limit):
+    # See documentation on defining a message payload.
+    try:
+        ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
+
+        print(ref)
+
+        title = f"Price Alert"
+
+        price_list = [1.0, 2.0, 3.0]
+        price_list = [0.1, 0.2, 0.5]
+
+        AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
+        AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
+
+        topic_list = ["Alpha", "Beta", "Gamma"]
+
+        for idx, price in enumerate(price_list):
+
+            body_Slot = {}
+
+            if AU >= price:
+                if not topic_limit[idx]:
+                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5]}%)"]
+                    topic_limit[idx] = True
+
+            elif AU <= -1 * price:
+                if not topic_limit[idx]:
+                    body_Slot['AU'] = [ref['AU'], F"▼ ({str(AU)[:5]}%)"]
+                    topic_limit[idx] = True
+
+            if AG >= price:
+                if not topic_limit[idx + int(len(topic_limit) / 2)]:
+                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5]}%)"]
+                    topic_limit[idx + int(len(topic_limit) / 2)] = True
+
+            elif AG <= -1 * price:
+                if not topic_limit[idx + int(len(topic_limit) / 2)]:
+                    body_Slot['AG'] = [ref['AG'], F"▼ ({str(AG)[:5]}%)"]
+                    topic_limit[idx + int(len(topic_limit) / 2)] = True
+
+            body_string = ""
+            gold_buf = ""
+            silver_buf = ""
+
+            if "AU" in body_Slot.keys():
+                gold_buf = f"Gold : ${body_Slot['AU'][0]}{body_Slot['AU'][1]}"
+
+            if "AG" in body_Slot.keys():
+                if "AU" in body_Slot.keys():
+                    silver_buf = f", Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
+                else:
+                    silver_buf = f"Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
+
+            body_string = gold_buf + silver_buf
+            if body_string != "":
+                # See documentation on defining a message payload.
+                message = messaging.Message(
+                    android=messaging.AndroidConfig(
+                        ttl=timedelta(seconds=3600),
+                        priority='normal',
+
+                        notification=messaging.AndroidNotification(
+                            title=title,
+                            body=body_string,
+                            icon='',
+                            color='#fd6166',
+                            sound='default'
+                        ),
+                    ),
+
+                    topic=topic_list[idx]
+                    # token=registration_token
+                )
+                # Send a message to the device corresponding to the provided
+                # registration token.
+                response = messaging.send(message)
+                # Response is a message ID string.
+                print('Successfully sent message:', topic_list[idx])
+                print('global topic_limit:', topic_limit)
+    except:
+        print("message error")
+
+def messageLimit():
+    global topic_limit
+    topic_limit = [False, False, False, False, False, False]
+
 if __name__ == "__main__":
-    # data()
+    # dd
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data, 'cron', minute='*/11', hour='0-23', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='*/11', hour='0-21', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="dayNight")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="reset_message_limit")
     # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-d23', day_of_week='sun', id="sunday")
 
     sched.add_job(getShortChartBuf, 'cron', minute='50', hour='23', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='50', hour='23', day_of_week='sat', id="longChart")

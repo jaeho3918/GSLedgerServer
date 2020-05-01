@@ -386,7 +386,7 @@ def message(topic_limit):
 
             if AU >= price:
                 if not topic_limit[idx]:
-                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5]}%)"]
+                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5-1]}%)"]
                     topic_limit[idx] = True
 
             elif AU <= -1 * price:
@@ -396,7 +396,7 @@ def message(topic_limit):
 
             if AG >= price:
                 if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
-                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5]}%)"]
+                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5-1]}%)"]
                     topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
 
             elif AG <= -1 * price:

@@ -455,9 +455,9 @@ if __name__ == "__main__":
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/11', hour='0-21', day_of_week='mon-fri', id="day")
     sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="dayNight")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="reset_message_limit")
+    sched.add_job(messageLimit, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="reset_message_limit")
     # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-d23', day_of_week='sun', id="sunday")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
 
     sched.add_job(getShortChartBuf, 'cron', minute='50', hour='23', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='50', hour='23', day_of_week='sat', id="longChart")

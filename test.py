@@ -154,8 +154,6 @@ def encrypt(data_input: dict):
 
     slot["DATE"] = date_slot
 
-    return {"open_Database": slot, "decrypt_Database": decrypt}
-
     print("data_input",data_input)
 
     print("decrypt", decrypt)  # to close database   isY6Vg9fS6kaqi7skn6jy26
@@ -163,6 +161,9 @@ def encrypt(data_input: dict):
     print("slot", slot)  # to open database -> functions     UxO6F6BSzPkIWd6SEwqxi3n
 
     print("encrypt", encrypt)  # at phone
+
+
+    return {"open_Database": slot, "decrypt_Database": decrypt}
 
 
 

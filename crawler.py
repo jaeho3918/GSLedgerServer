@@ -49,7 +49,7 @@ XPATHS = {
 
 CUR_TABLE = ["EUR", "GBP", "JPY", "CAD", "AUD", "KRW"]
 
-topic_limit = [False, False, False, False, False, False]
+topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
 
 real_result = {}
 last_result = {}
@@ -373,7 +373,7 @@ def message(topic_limit):
         title = f"Price Alert"
 
         price_list = [1.0, 2.0, 3.0]
-        price_list = [0.1, 0.2, 0.5]
+        price_list = [0.1, 0.2, 0.3]
 
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
@@ -390,19 +390,19 @@ def message(topic_limit):
                     topic_limit[idx] = True
 
             elif AU <= -1 * price:
-                if not topic_limit[idx]:
+                if not topic_limit[idx + int(len(topic_limit) * 1 / 4)]:
                     body_Slot['AU'] = [ref['AU'], F"▼ ({str(AU)[:5]}%)"]
-                    topic_limit[idx] = True
+                    topic_limit[idx + int(len(topic_limit) * 1 / 4)] = True
 
             if AG >= price:
-                if not topic_limit[idx + int(len(topic_limit) / 2)]:
+                if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
                     body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5]}%)"]
-                    topic_limit[idx + int(len(topic_limit) / 2)] = True
+                    topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
 
             elif AG <= -1 * price:
-                if not topic_limit[idx + int(len(topic_limit) / 2)]:
+                if not topic_limit[idx + int(len(topic_limit) * 3 / 4)]:
                     body_Slot['AG'] = [ref['AG'], F"▼ ({str(AG)[:5]}%)"]
-                    topic_limit[idx + int(len(topic_limit) / 2)] = True
+                    topic_limit[idx + int(len(topic_limit) * 3 / 4)] = True
 
             body_string = ""
             gold_buf = ""
@@ -446,16 +446,19 @@ def message(topic_limit):
     except:
         print("message error")
 
+
 def messageLimit():
     global topic_limit
     topic_limit = [False, False, False, False, False, False]
+    print("topic_limit at ", datetime.utcnow(), "  ", topic_limit)
+
 
 if __name__ == "__main__":
-    # dd
+    # data()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/11', hour='0-21', day_of_week='mon-fri', id="day")
     sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="dayNight")
-    sched.add_job(messageLimit, 'cron', minute='56', hour='22-23', day_of_week='mon-fri', id="reset_message_limit")
+    sched.add_job(messageLimit, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="reset_message_limit")
     # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
     sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
 

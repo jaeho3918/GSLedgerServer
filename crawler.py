@@ -385,7 +385,7 @@ def message(topic_limit):
 
             if AU >= price:
                 if not topic_limit[idx]:
-                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5-1]}%)"]
+                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5 - 1]}%)"]
                     topic_limit[idx] = True
 
             elif AU <= -1 * price:
@@ -395,7 +395,7 @@ def message(topic_limit):
 
             if AG >= price:
                 if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
-                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5-1]}%)"]
+                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5 - 1]}%)"]
                     topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
 
             elif AG <= -1 * price:
@@ -448,12 +448,12 @@ def message(topic_limit):
 
 def messageLimit():
     global topic_limit
-    topic_limit = [False, False, False, False, False, False]
+    topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
     print("topic_limit at ", datetime.utcnow(), "  ", topic_limit)
 
 
 if __name__ == "__main__":
-    getShortChartBuf()
+    # getShortChartBuf()
     # data()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/11', hour='0-20', day_of_week='mon-fri', id="day")

@@ -69,6 +69,7 @@ def message(topic_limit):
                     silver_buf = f"Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
 
             body_string = gold_buf + silver_buf
+
             if body_string != "":
                 # See documentation on defining a message payload.
                 message = messaging.Message(

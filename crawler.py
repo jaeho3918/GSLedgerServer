@@ -223,7 +223,7 @@ def getShortChartBuf():
 
     # 리스트 만들기
     for date, items in dict(list_query).items():
-        date_list.append(date[0:3] + "/" + date[4:5] + "/" + date[6:7])
+        date_list.append(date[0:4] + "/" + date[4:6] + "/" + date[6:8])
         au_list.append(items["AU"])
         ag_list.append(items["AG"])
 
@@ -373,7 +373,6 @@ def message(topic_limit):
         title = f"Price Alert"
 
         price_list = [1.0, 2.0, 3.0]
-        price_list = [0.1, 0.2, 0.3]
 
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
@@ -454,6 +453,7 @@ def messageLimit():
 
 
 if __name__ == "__main__":
+    getShortChartBuf()
     # data()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/11', hour='0-20', day_of_week='mon-fri', id="day")

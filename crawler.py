@@ -1,47 +1,17 @@
 import requests
-from lxml import etree
 from apscheduler.schedulers.background import BackgroundScheduler
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 from datetime import datetime, timedelta
 import time
+import csv
 import logging
 import random
 from firebase_admin import messaging
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-
-CHROMDRIVER_PATH = f'./chromedriver'
-
-chrome_option = Options()
-chrome_option.add_argument("--headless")
-chrome_option.add_argument("--no-sandbox")
-chrome_option.add_argument("--disable-dev-shm-usage")
-chrome_option.add_argument("disable-gpu")  # 가속 사용 x
-chrome_option.add_argument("lang=ko_KR")  # 가짜 플러그인 탑재
-chrome_option.add_argument(
-    'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')  # user-agent 이름 설정
-prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
-                                                    'geolocation': 2, 'notifications': 2,
-                                                    'auto_select_certificate': 2, 'fullscreen': 2,
-                                                    'mouselock': 2, 'mixed_script': 2, 'media_stream': 2,
-                                                    'media_stream_mic': 2, 'media_stream_camera': 2,
-                                                    'protocol_handlers': 2, 'ppapi_broker': 2,
-                                                    'automatic_downloads': 2, 'midi_sysex': 2,
-                                                    'push_messaging': 2, 'ssl_cert_decisions': 2,
-                                                    'metro_switch_to_desktop': 2,
-                                                    'protected_media_identifier': 2, 'app_banner': 2,
-                                                    'site_engagement': 2, 'durable_storage': 2}}
-chrome_option.add_experimental_option('prefs', prefs)
-chrome_option.add_argument("start-maximized")
-chrome_option.add_argument("disable-infobars")
-chrome_option.add_argument("--disable-extensions")
 
 real_result = {}
 last_result = {}
-
-driver = 0
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
@@ -51,52 +21,7 @@ LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
 CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
 OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
-
-URLS = {
-    "AU": "https://kr.investing.com/commodities/gold-historical-data",
-    # https://kr.investing.com/currencies/xau-usd-historical-data
-    "AG": "https://kr.investing.com/commodities/silver-historical-data",
-    # https://kr.investing.com/currencies/xag-usd-historical-data
-    "CUR": 'https://kr.investing.com/currencies/exchange-rates-table',
-    "CNY": 'https://kr.investing.com/currencies/usd-cny-historical-data',
-    "INR": 'https://kr.investing.com/currencies/usd-inr-historical-data'
-}
-
-XPATHS = {
-    "AU": ['//*[@id="last_last"]',
-           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
-    "AG": ['//*[@id="last_last"]',
-           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
-    "INR": ['//*[@id="last_last"]'],
-    "CUR": ['//*[@id="last_12_17"]',
-            '//*[@id="last_12_3"]',
-            '//*[@id="last_12_2"]',
-            '//*[@id="last_12_15"]',
-            '//*[@id="last_12_1"]',
-            '//*[@id="last_12_28"]'
-            ],
-    "CNY": ['//*[@id="last_last"]'],
-}
-
-# XPATHS = {
-#     "AU": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
-#            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
-#     "AG": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
-#            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
-#     "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
-#     "CUR": ["/html/body/div[5]/section/table/tbody/tr[1]/td[3]/text()",
-#             "/html/body/div[5]/section/table/tbody/tr[1]/td[4]/text()",
-#             "/html/body/div[5]/section/table/tbody/tr[1]/td[5]/text()",
-#             "/html/body/div[5]/section/table/tbody/tr[1]/td[7]/text()",
-#             "/html/body/div[5]/section/table/tbody/tr[1]/td[8]/text()",
-#             "/html/body/div[5]/section/table/tbody/tr[1]/td[9]/text()"
-#             ],
-#     "CNY": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()"],
-# }
-
-CUR_TABLE = ["EUR", "GBP", "JPY", "CAD", "AUD", "KRW"]
+URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
 
 topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
 
@@ -107,30 +32,6 @@ formatter = logging.Formatter('[%(asctime)s][%(levelname)s|%(filename)s:%(lineno
 fileHandler = logging.FileHandler(f'./log_Crawler.log')
 fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
-
-
-def driver_setting():
-    global real_result
-    global last_result
-    global driver
-
-    real_result = {}
-    last_result = {}
-
-    print("driver_stteing Start : ", datetime.utcnow())
-
-    driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
-
-    for idx in range(5):
-        driver.execute_script('window.open("about:blank", "_blank");')
-
-    tabs = driver.window_handles
-    idx1 = 0
-    for key, value in URLS.items():
-        driver.switch_to_window(tabs[idx1])
-        driver.get(value)
-        idx1 += 1
-
 
 def closeTime(now):
 
@@ -179,79 +80,34 @@ def closeTime(now):
 
         return f"{now.year}{buf_month}{buf_day}"
 
-
 def data():
     print("crawler Start : ", datetime.utcnow())
-    try:
-        global driver
 
-        tabs = driver.window_handles
-        # print(tabs)
+    response = requests.get(URL)
+    print(response.status_code)
+    # print("timestamp", datetime.fromtimestamp(response.json()["timestamp"]))
+    # print("data", response.json()["quotes"])
 
-        result = {}
-        idx1 = 0
-        for key, value in URLS.items():
-            # rad = random.randint(33, 60)
-            # # rad = 8
-            # # print(key, rad)
-            # print(key, datetime.utcnow())
-            # time.sleep(5 + rad)
-            driver.switch_to_window(tabs[idx1])
-            idx1 += 1
-            # print(key, value, idx1)
+    for key, value in response.json()["quotes"].items():
+        if (key[-3:] == "XAU") | (key[-3:] == "XAG"):
+            real_result[key[-2:]] = 1 / value
+        else:
+            real_result[key[-3:]] = value
+    # print(real_result)
 
-            for idx, xpath in enumerate(XPATHS[key]):
+    f = open('YES.csv', 'r')
+    rdr = csv.reader(f)
+    for line in rdr:
+        real_result[line[0]] = float(line[1])
 
-                result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
-                # print(result[key])
-
-                if key == "CUR":
-                    real_result[CUR_TABLE[idx]] = float(result[key])
-
-                elif len(key) == 2:
-                    if idx == 1:
-                        real_result[f"YES{key}"] = float(result[key])
-                    else:
-                        real_result[key] = float(result[key])
-
-                else:
-                    # print(float(text))
-                    real_result[key] = float(result[key])
-
-                idx += 1
-                if idx >= len(tabs): break
-
-        # for key, item in URLS.items():
-        #     rad = random.randint(33, 60)
-        #     # rad = 8
-        #     # print(key, rad)
-        #     print(key, datetime.utcnow())
-        #     time.sleep(5 + rad)
-        #     html = requests.get(item, headers=headers).text
-        #     xpath_data = etree.HTML(html)
-        #     for idx, xpath in enumerate(XPATHS[key]):
-        #         text = xpath_data.xpath(xpath)
-        #         if key == "CUR":
-        #             # print(text[0].strip())
-        #             real_result[CUR_TABLE[idx]] = float(text[0].strip().replace(",", ""))
-        #
-        #         elif len(key) == 2:
-        #             if idx == 1:
-        #                 real_result[f"YES{key}"] = float(text[0].strip().replace(",", ""))
-        #             else:
-        #                 real_result[key] = float(text[0].strip().replace(",", ""))
-        #
-        #         else:
-        #             # print(float(text[0].strip().replace(",", "")))
-        #             real_result[key] = float(text[0].strip().replace(",", ""))
-    except:
-        logger.info("Crawler ERROR")
+    # except:
+    #     logger.info("Crawler ERROR")
 
     now = datetime.utcnow()
 
     real_result1 = real_result.copy()
 
-    real_result["DATE"] = datetime.utcnow().timestamp()
+    real_result["DATE"] = response.json()["timestamp"]
     print("real Databse : ", datetime.utcnow().timestamp(), real_result)
 
     now = datetime.utcnow()
@@ -303,6 +159,14 @@ def data():
     global topic_limit
     message(topic_limit)
 
+
+def setYES():
+    response = requests.get(URL)
+    f = open('YES.csv', 'w', newline='')
+    wr = csv.writer(f)
+    wr.writerow(['YESAU', 1/response.json()["quotes"]["USDXAU"]])
+    wr.writerow(['YESAG', 1/response.json()["quotes"]["USDXAG"]])
+    f.close()
 
 def getShortChartBuf():
     limit_len = 70
@@ -563,13 +427,14 @@ def messageLimit():
 
 
 if __name__ == "__main__":
-    driver_setting()
+    data()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="dayNight")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
+
+    sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")
-    # sched.add_job(data, 'cron', minute='*/10', day_of_week='sun', id="sunday")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sunday")
 
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")

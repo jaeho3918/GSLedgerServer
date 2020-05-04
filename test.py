@@ -2,7 +2,7 @@ import random
 import time
 from datetime import datetime
 from datetime import timedelta
-
+import requests
 # def closeTime(now):
 #     closeTime_dict = {
 #         "year": now.year,
@@ -96,76 +96,89 @@ from datetime import timedelta
 #     #
 #     # print(closeTime(now))
 #     # time.sleep(1)
+#
+# data = {
+#     "AG": 15.428,
+#     "AU": 1723.2,
+#     "AUD": 1.535,
+#     "CAD": 1.3942,
+#     "CNY": 7.0774,
+#     "EUR": 0.9214,
+#     "GBP": 0.8065,
+#     "INR": 75.653,
+#     "JPY": 106.48,
+#     "KRW": 1218.38,
+#     "YESAG": 15.171,
+#     "YESAU": 1722.2,
+#     "DATE":"2006/06/06 18:18:18"
+# }
+#
+#
+#
+# def encrypt(data_input: dict):
+#     slot = {
+#         "AU": 0,
+#         "AG": 0,
+#         "AUD": 0,
+#         "CAD": 0,
+#         "CNY": 0,
+#         "EUR": 0,
+#         "GBP": 0,
+#         "INR": 0,
+#         "JPY": 0,
+#         "KRW": 0,
+#         "YESAG": 0,
+#         "YESAU": 0
+#     }
+#     date_slot = data_input["DATE"]
+#     decrypt = {}
+#     encrypt = {}
+#
+#     for key in slot.keys():
+#         number6 = random.randint(1, random.randint(1, 5) ** 10)
+#         floatNum1 = random.randint(0, 9)
+#         floatNum2 = random.randint(0, 9)
+#         floatNum3 = random.randint(0, 9)
+#         floatNum4 = random.randint(0, 9)
+#         floatNum5 = random.randint(0, 9)
+#
+#         slot[key] = f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}"
+#
+#     for key in slot.keys():
+#         decrypt[key] = data_input[key] / float(slot[key])
+#     decrypt["DATE"] = date_slot
+#
+#     for key in slot.keys():
+#         encrypt[key] = decrypt[key] * float(slot[key])
+#
+#
+#     slot["DATE"] = date_slot
+#
+#     print("data_input",data_input)
+#
+#     print("decrypt", decrypt)  # to close database   isY6Vg9fS6kaqi7skn6jy26
+#
+#     print("slot", slot)  # to open database -> functions     UxO6F6BSzPkIWd6SEwqxi3n
+#
+#     print("encrypt", encrypt)  # at phone
+#
+#
+#     return {"open_Database": slot, "decrypt_Database": decrypt}
+#
+# encrypt(data)
 
-data = {
-    "AG": 15.428,
-    "AU": 1723.2,
-    "AUD": 1.535,
-    "CAD": 1.3942,
-    "CNY": 7.0774,
-    "EUR": 0.9214,
-    "GBP": 0.8065,
-    "INR": 75.653,
-    "JPY": 106.48,
-    "KRW": 1218.38,
-    "YESAG": 15.171,
-    "YESAU": 1722.2,
-    "DATE":"2006/06/06 18:18:18"
-}
+URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
 
+response = requests.get(URL)
+print(response.status_code)
+print("timestamp",datetime.fromtimestamp(response.json()["timestamp"]))
+print("data", response.json()["quotes"])
 
+result = {}
+for key, value in response.json()["quotes"].items():
+    if (key[-3:] == "XAU")|(key[-3:] == "XAG"):
+        result[key[-2:]] = 1 / value
+    else:
+        result[key[-3:]] = value
 
-def encrypt(data_input: dict):
-    slot = {
-        "AU": 0,
-        "AG": 0,
-        "AUD": 0,
-        "CAD": 0,
-        "CNY": 0,
-        "EUR": 0,
-        "GBP": 0,
-        "INR": 0,
-        "JPY": 0,
-        "KRW": 0,
-        "YESAG": 0,
-        "YESAU": 0
-    }
-    date_slot = data_input["DATE"]
-    decrypt = {}
-    encrypt = {}
-
-    for key in slot.keys():
-        number6 = random.randint(1, random.randint(1, 5) ** 10)
-        floatNum1 = random.randint(0, 9)
-        floatNum2 = random.randint(0, 9)
-        floatNum3 = random.randint(0, 9)
-        floatNum4 = random.randint(0, 9)
-        floatNum5 = random.randint(0, 9)
-
-        slot[key] = f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}"
-
-    for key in slot.keys():
-        decrypt[key] = data_input[key] / float(slot[key])
-    decrypt["DATE"] = date_slot
-
-    for key in slot.keys():
-        encrypt[key] = decrypt[key] * float(slot[key])
-
-
-    slot["DATE"] = date_slot
-
-    print("data_input",data_input)
-
-    print("decrypt", decrypt)  # to close database   isY6Vg9fS6kaqi7skn6jy26
-
-    print("slot", slot)  # to open database -> functions     UxO6F6BSzPkIWd6SEwqxi3n
-
-    print("encrypt", encrypt)  # at phone
-
-
-    return {"open_Database": slot, "decrypt_Database": decrypt}
-
-
-
-
-encrypt(data)
+print(result)

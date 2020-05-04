@@ -9,6 +9,39 @@ import time
 import logging
 import random
 from firebase_admin import messaging
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+CHROMDRIVER_PATH = f'./chromedriver'
+
+chrome_option = Options()
+chrome_option.add_argument("--headless")
+chrome_option.add_argument("--no-sandbox")
+chrome_option.add_argument("--disable-dev-shm-usage")
+chrome_option.add_argument("disable-gpu")  # 가속 사용 x
+chrome_option.add_argument("lang=ko_KR")  # 가짜 플러그인 탑재
+chrome_option.add_argument(
+    'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')  # user-agent 이름 설정
+prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
+                                                    'geolocation': 2, 'notifications': 2,
+                                                    'auto_select_certificate': 2, 'fullscreen': 2,
+                                                    'mouselock': 2, 'mixed_script': 2, 'media_stream': 2,
+                                                    'media_stream_mic': 2, 'media_stream_camera': 2,
+                                                    'protocol_handlers': 2, 'ppapi_broker': 2,
+                                                    'automatic_downloads': 2, 'midi_sysex': 2,
+                                                    'push_messaging': 2, 'ssl_cert_decisions': 2,
+                                                    'metro_switch_to_desktop': 2,
+                                                    'protected_media_identifier': 2, 'app_banner': 2,
+                                                    'site_engagement': 2, 'durable_storage': 2}}
+chrome_option.add_experimental_option('prefs', prefs)
+chrome_option.add_argument("start-maximized")
+chrome_option.add_argument("disable-infobars")
+chrome_option.add_argument("--disable-extensions")
+
+real_result = {}
+last_result = {}
+
+driver = 0
 
 REALTIME_DB_PATH = "sYTVBn6F18VT6Ykw6L"
 LASTTIME_DB_PATH = "OGn6sgTK6umHojW6QV"
@@ -22,7 +55,7 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
 
 URLS = {
-    "AU": "https://www.investing.com/commodities/gold-historical-data",
+    "AU": "https://kr.investing.com/commodities/gold-historical-data",
     # https://kr.investing.com/currencies/xau-usd-historical-data
     "AG": "https://kr.investing.com/commodities/silver-historical-data",
     # https://kr.investing.com/currencies/xag-usd-historical-data
@@ -32,27 +65,40 @@ URLS = {
 }
 
 XPATHS = {
-    "AU": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
-           "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
-    "AG": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
-           "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
-    "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
-    "CUR": ["/html/body/div[5]/section/table/tbody/tr[1]/td[3]/text()",
-            "/html/body/div[5]/section/table/tbody/tr[1]/td[4]/text()",
-            "/html/body/div[5]/section/table/tbody/tr[1]/td[5]/text()",
-            "/html/body/div[5]/section/table/tbody/tr[1]/td[7]/text()",
-            "/html/body/div[5]/section/table/tbody/tr[1]/td[8]/text()",
-            "/html/body/div[5]/section/table/tbody/tr[1]/td[9]/text()"
+    "AU": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
+    "AG": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
+    "INR": ['//*[@id="last_last"]'],
+    "CUR": ['//*[@id="last_12_17"]',
+            '//*[@id="last_12_3"]',
+            '//*[@id="last_12_2"]',
+            '//*[@id="last_12_15"]',
+            '//*[@id="last_12_1"]',
+            '//*[@id="last_12_28"]'
             ],
-    "CNY": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()"],
+    "CNY": ['//*[@id="last_last"]'],
 }
+
+# XPATHS = {
+#     "AU": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
+#            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
+#     "AG": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()",
+#            "/html/body/div[5]/section/div[4]/div[2]/div/ul/li[1]/span[2]/text()"],
+#     "INR": ['/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()'],
+#     "CUR": ["/html/body/div[5]/section/table/tbody/tr[1]/td[3]/text()",
+#             "/html/body/div[5]/section/table/tbody/tr[1]/td[4]/text()",
+#             "/html/body/div[5]/section/table/tbody/tr[1]/td[5]/text()",
+#             "/html/body/div[5]/section/table/tbody/tr[1]/td[7]/text()",
+#             "/html/body/div[5]/section/table/tbody/tr[1]/td[8]/text()",
+#             "/html/body/div[5]/section/table/tbody/tr[1]/td[9]/text()"
+#             ],
+#     "CNY": ["/html/body/div[5]/section/div[4]/div[1]/div[1]/div[2]/div[1]/span[1]/text()"],
+# }
 
 CUR_TABLE = ["EUR", "GBP", "JPY", "CAD", "AUD", "KRW"]
 
 topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
-
-real_result = {}
-last_result = {}
 
 logging.basicConfig(filename=f'./log_Crawler.log')
 logger = logging.getLogger(__name__)
@@ -63,7 +109,31 @@ fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 
 
+def driver_setting():
+    global real_result
+    global last_result
+    global driver
+
+    real_result = {}
+    last_result = {}
+
+    print("driver_stteing Start : ", datetime.utcnow())
+
+    driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+
+    for idx in range(5):
+        driver.execute_script('window.open("about:blank", "_blank");')
+
+    tabs = driver.window_handles
+    idx1 = 0
+    for key, value in URLS.items():
+        driver.switch_to_window(tabs[idx1])
+        driver.get(value)
+        idx1 += 1
+
+
 def closeTime(now):
+
     closeTime_dict = {
         "year": now.year,
         "month": now.month,
@@ -111,31 +181,69 @@ def closeTime(now):
 
 
 def data():
+    print("crawler Start : ", datetime.utcnow())
     try:
-        logger.info("Crawler Start")
-        for key, item in URLS.items():
-            rad = random.randint(33, 60)
-            # rad = 8
-            # print(key, rad)
-            print(key, datetime.utcnow())
-            time.sleep(5 + rad)
-            html = requests.get(item, headers=headers).text
-            xpath_data = etree.HTML(html)
+        global driver
+
+        tabs = driver.window_handles
+        # print(tabs)
+
+        result = {}
+        idx1 = 0
+        for key, value in URLS.items():
+            # rad = random.randint(33, 60)
+            # # rad = 8
+            # # print(key, rad)
+            # print(key, datetime.utcnow())
+            # time.sleep(5 + rad)
+            driver.switch_to_window(tabs[idx1])
+            idx1 += 1
+            # print(key, value, idx1)
+
             for idx, xpath in enumerate(XPATHS[key]):
-                text = xpath_data.xpath(xpath)
+
+                result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+                # print(result[key])
+
                 if key == "CUR":
-                    # print(text[0].strip())
-                    real_result[CUR_TABLE[idx]] = float(text[0].strip().replace(",", ""))
+                    real_result[CUR_TABLE[idx]] = float(result[key])
 
                 elif len(key) == 2:
                     if idx == 1:
-                        real_result[f"YES{key}"] = float(text[0].strip().replace(",", ""))
+                        real_result[f"YES{key}"] = float(result[key])
                     else:
-                        real_result[key] = float(text[0].strip().replace(",", ""))
+                        real_result[key] = float(result[key])
 
                 else:
-                    # print(float(text[0].strip().replace(",", "")))
-                    real_result[key] = float(text[0].strip().replace(",", ""))
+                    # print(float(text))
+                    real_result[key] = float(result[key])
+
+                idx += 1
+                if idx >= len(tabs): break
+
+        # for key, item in URLS.items():
+        #     rad = random.randint(33, 60)
+        #     # rad = 8
+        #     # print(key, rad)
+        #     print(key, datetime.utcnow())
+        #     time.sleep(5 + rad)
+        #     html = requests.get(item, headers=headers).text
+        #     xpath_data = etree.HTML(html)
+        #     for idx, xpath in enumerate(XPATHS[key]):
+        #         text = xpath_data.xpath(xpath)
+        #         if key == "CUR":
+        #             # print(text[0].strip())
+        #             real_result[CUR_TABLE[idx]] = float(text[0].strip().replace(",", ""))
+        #
+        #         elif len(key) == 2:
+        #             if idx == 1:
+        #                 real_result[f"YES{key}"] = float(text[0].strip().replace(",", ""))
+        #             else:
+        #                 real_result[key] = float(text[0].strip().replace(",", ""))
+        #
+        #         else:
+        #             # print(float(text[0].strip().replace(",", "")))
+        #             real_result[key] = float(text[0].strip().replace(",", ""))
     except:
         logger.info("Crawler ERROR")
 
@@ -144,12 +252,12 @@ def data():
     real_result1 = real_result.copy()
 
     real_result["DATE"] = datetime.utcnow().timestamp()
-    print(real_result)
+    print("real Databse : ", datetime.utcnow().timestamp(), real_result)
 
     now = datetime.utcnow()
     real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
-    print(datetime.utcnow())
-    print(real_result1["DATE"])
+    # print(datetime.utcnow())
+    # print(real_result1["DATE"])
 
     try:
         last_buf = real_result.copy()
@@ -161,7 +269,7 @@ def data():
 
     last_date = closeTime(now)
     last_result[last_date] = last_buf
-    print(last_result)
+    # print(last_result)
 
     #     # print(real_result, last_result)
 
@@ -198,7 +306,7 @@ def data():
 
 def getShortChartBuf():
     limit_len = 70
-
+    print("Short Chart", datetime.utcnow())
     try:
         cred = credentials.Certificate(
             "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
@@ -215,7 +323,7 @@ def getShortChartBuf():
 
     # 가져온 데이터를 제한길이로 나눔
     step = len(list_query) // limit_len
-    print(len(list_query) // limit_len)
+    # print(len(list_query) // limit_len)
 
     ag_list = []
     au_list = []
@@ -249,9 +357,9 @@ def getShortChartBuf():
     # au_list.append(au_last)
     # date_list.append(date_last)
 
-    print(len(ag_list), ag_list[:-1])
-    print(len(au_list), au_list[:-1])
-    print(len(date_list), date_list[:-1])
+    # print(len(ag_list), ag_list[:-1])
+    # print(len(au_list), au_list[:-1])
+    # print(len(date_list), date_list[:-1])
 
     db.reference(f"/{SHORTBUF_DB_PATH}").set({"AU": au_list[:-1],
                                               "AG": ag_list[:-1],
@@ -264,6 +372,7 @@ def getLongChartBuf():
     start_Date = 19920918
     limit_len = 279
 
+    print("Long Chart", datetime.utcnow())
     try:
         cred = credentials.Certificate(
             "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
@@ -276,11 +385,11 @@ def getLongChartBuf():
 
     list_query = ref.get()
 
-    print('query length', len(list_query))
+    # print('query length', len(list_query))
 
     # 가져온 데이터를 제한길이로 나눔
     step = len(list_query) // limit_len
-    print(len(list_query) // limit_len)
+    # print(len(list_query) // limit_len)
 
     ag_list = []
     au_list = []
@@ -364,11 +473,12 @@ def encrypt(data_input: dict):
 
 
 def message(topic_limit):
+    print("Message Start", datetime.utcnow())
     # See documentation on defining a message payload.
     try:
         ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
 
-        print(ref)
+        # print(ref)
 
         title = f"Price Alert"
 
@@ -440,8 +550,8 @@ def message(topic_limit):
                 # registration token.
                 response = messaging.send(message)
                 # Response is a message ID string.
-                print('Successfully sent message:', topic_list[idx])
-                print('global topic_limit:', topic_limit)
+                # print('Successfully sent message:', topic_list[idx])
+                # print('global topic_limit:', topic_limit)
     except:
         print("message error")
 
@@ -453,14 +563,15 @@ def messageLimit():
 
 
 if __name__ == "__main__":
-    # getShortChartBuf()
-    # data()
+    driver_setting()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/11', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-fri', id="dayNight")
-    sched.add_job(messageLimit, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="reset_message_limit")
+    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-thu', id="dayNight")
+    sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")
     # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
     sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
+
+    sched.add_job(driver_setting, 'cron', hour='*/6', day_of_week='mon-fri', id="reset_driver")
 
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")

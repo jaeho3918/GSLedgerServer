@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import pandas as pd
 from datetime import datetime
-from selenium.webdriver.chrome.options import Options
 import time
 import logging
 import re

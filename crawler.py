@@ -565,13 +565,11 @@ def messageLimit():
 if __name__ == "__main__":
     driver_setting()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data, 'cron', minute='*/11', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='mon-thu', id="dayNight")
+    sched.add_job(data, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="dayNight")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")
-    # sched.add_job(data, 'cron', minute='*/11', day_of_week='sun', id="sunday")
-    sched.add_job(data, 'cron', minute='*/11', hour='22-23', day_of_week='sun', id="sunday")
-
-    sched.add_job(driver_setting, 'cron', hour='*/6', day_of_week='mon-fri', id="reset_driver")
+    # sched.add_job(data, 'cron', minute='*/10', day_of_week='sun', id="sunday")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sunday")
 
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")

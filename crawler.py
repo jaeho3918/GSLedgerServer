@@ -273,7 +273,12 @@ def data():
     ref.update(light["decrypt_Database"])
 
     ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
+    count = ref.get()
     ref.update({ real_result["DATE"]:real_result})
+
+    if len(count) >= 70:
+        ref.child(sorted(count.keys())[0]).delete()
+
 
     logger.info("Crawler Upload")
 
@@ -501,22 +506,22 @@ def message(topic_limit):
 
             if AU >= price:
                 if not topic_limit[idx]:
-                    body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5 - 1]}%)"]
+                    body_Slot['AU'] = [format(ref['AU'],'.2f'), F"▲ (+{format(AU,'.2f')}%)"]
                     topic_limit[idx] = True
 
             elif AU <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 1 / 4)]:
-                    body_Slot['AU'] = [ref['AU'], F"▼ ({str(AU)[:5]}%)"]
+                    body_Slot['AU'] = [format(ref['AU'],'.2f'), F"▼ ({format(AU,'.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 1 / 4)] = True
 
             if AG >= price:
                 if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
-                    body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5 - 1]}%)"]
+                    body_Slot['AG'] = [format(ref['AG'],'.2f'), F"▲ (+{format(AG,'.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
 
             elif AG <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 3 / 4)]:
-                    body_Slot['AG'] = [ref['AG'], F"▼ ({str(AG)[:5]}%)"]
+                    body_Slot['AG'] = [format(ref['AG'],'.2f'), F"▼ ({format(AG,'.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 3 / 4)] = True
 
             body_string = ""

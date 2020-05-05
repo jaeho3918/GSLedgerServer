@@ -74,8 +74,34 @@ fileHandler = logging.FileHandler(f'./log_Crawler.log')
 fileHandler.setFormatter(formatter)
 logger.addHandler(fileHandler)
 
-def closeTime(now):
+driver = 6
+real_result = {}
+last_result = {}
 
+
+def driver_setting():
+    global real_result
+    global last_result
+    global driver
+    
+    real_result = {}
+    last_result = {}
+    
+    print("driver_stteing Start : ", datetime.utcnow())
+    
+    driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+    
+    for idx in range(2):
+        driver.execute_script('window.open("about:blank", "_blank");')
+    
+    tabs = driver.window_handles
+    idx1 = 0
+    for key, value in URLS.items():
+        driver.switch_to_window(tabs[idx1])
+        driver.get(value)
+        idx1 += 1
+
+def closeTime(now):
     closeTime_dict = {
         "year": now.year,
         "month": now.month,
@@ -89,87 +115,104 @@ def closeTime(now):
     closeTime_dict[
         "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
     closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
-
+    
     if now >= closeTime_dict["value"]:  #
         buf_month = ""
         buf_day = ""
-
+        
         if now.month < 10:
             buf_month = f"0{now.month}"
         else:
             buf_month = f"{now.month}"
-
+        
         if now.day + 1 < 10:
             buf_day = f"0{now.day + 1}"
         else:
             buf_day = f"{now.day + 1}"
-
+        
         return f"{now.year}{buf_month}{buf_day}"
     else:
         buf_month = ""
         buf_day = ""
-
+        
         if now.month < 10:
             buf_month = f"0{now.month}"
         else:
             buf_month = f"{now.month}"
-
+        
         if now.day < 10:
             buf_day = f"0{now.day}"
         else:
             buf_day = f"{now.day}"
-
+        
         return f"{now.year}{buf_month}{buf_day}"
 
 def data():
+    global driver
+    
     print("crawler Start : ", datetime.utcnow())
-
+    real_result = {}
+    last_result = {}
+    result = {}
+    tabs = driver.window_handles
+    idx1 = 0
+    for key, value in URLS.items():
+        driver.switch_to_window(tabs[idx1])
+        idx1 += 1
+        
+        for idx, xpath in enumerate(XPATHS[key]):
+            
+            result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+            # print(result[key])
+            
+            if len(key) == 2:
+                if idx == 1:
+                    real_result[f"YES{key}"] = float(result[key])
+                else:
+                    real_result[key] = float(result[key])
+    
     response = requests.get(URL)
-    print(response.status_code)
-    # print("timestamp", datetime.fromtimestamp(response.json()["timestamp"]))
-    # print("data", response.json()["quotes"])
-
     for key, value in response.json()["quotes"].items():
         if (key[-3:] == "XAU") | (key[-3:] == "XAG"):
-            real_result[key[-2:]] = 1 / value
+            real_result[key[-2:]] = ((1 / value) + real_result[key[-2:]])/2
         else:
             real_result[key[-3:]] = value
-    # print(real_result)
-
+    
     f = open('YES.csv', 'r')
     rdr = csv.reader(f)
     for line in rdr:
         real_result[line[0]] = float(line[1])
-
+    
     # except:
     #     logger.info("Crawler ERROR")
-
+    
     now = datetime.utcnow()
-
+    
     real_result1 = real_result.copy()
-
+    
     real_result["DATE"] = response.json()["timestamp"]
     print("real Databse : ", datetime.utcnow().timestamp(), real_result)
-
+    
     now = datetime.utcnow()
     real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
     # print(datetime.utcnow())
     # print(real_result1["DATE"])
-
+    
     try:
         last_buf = real_result.copy()
         last_buf.pop("DATE")
         last_buf.pop("YESAU")
         last_buf.pop("YESAG")
+        
     except:
         logger.info("Crawler ERROR")
-
+    
     last_date = closeTime(now)
     last_result[last_date] = last_buf
     # print(last_result)
-
+    
     #     # print(real_result, last_result)
-
+    
     try:
         cred = credentials.Certificate(
             "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
@@ -177,37 +220,58 @@ def data():
         print("Success Firebase Upload")
     except:
         pass
-
+    
     ref = db.reference(f"/{REALTIME_DB_PATH}")
     ref.update(real_result)
-
+    
     ref = db.reference(f"/{REALTIME1_DB_PATH}")
     ref.update(real_result1)
-
+    
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
-
+    
     light = encrypt(real_result1)  # "open_Database"     "decrypt_Database"
-
+    
     ref = db.reference(f"/{OPEN_REALDATA}")
     ref.update(light["open_Database"])
-
+    
     ref = db.reference(f"/{CLOSE_REALDATA}")
     ref.update(light["decrypt_Database"])
-
+    
     logger.info("Crawler Upload")
-
+    
     global topic_limit
     message(topic_limit)
 
 
 def setYES():
+    global driver
+    
+    print("crawler Start : ", datetime.utcnow())
+    
+    result = {}
+    tabs = driver.window_handles
+    idx1 = 0
+    for key, value in URLS.items():
+        driver.switch_to_window(tabs[idx1])
+        idx1 += 1
+        
+        for idx, xpath in enumerate(XPATHS[key]):
+            
+            result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+            # print(result[key])
+            
+            if len(key) == 2:
+                if idx == 1:
+                    real_result[f"YES{key}"] = float(result[key])
+    
     response = requests.get(URL)
     f = open('YES.csv', 'w', newline='')
     wr = csv.writer(f)
-    wr.writerow(['YESAU', 1/response.json()["quotes"]["USDXAU"]])
-    wr.writerow(['YESAG', 1/response.json()["quotes"]["USDXAG"]])
+    wr.writerow(['YESAU', 1 / response.json()["quotes"]["USDXAU"]])
+    wr.writerow(['YESAG', 1 / response.json()["quotes"]["USDXAG"]])
     f.close()
+
 
 def getShortChartBuf():
     limit_len = 70
@@ -219,53 +283,53 @@ def getShortChartBuf():
         print("Success Firebase Upload")
     except:
         pass
-
+    
     ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().limit_to_last(limit_len * 2)
-
+    
     list_query = ref.get()
-
+    
     # print('query length', len(list_query))
-
+    
     # 가져온 데이터를 제한길이로 나눔
     step = len(list_query) // limit_len
     # print(len(list_query) // limit_len)
-
+    
     ag_list = []
     au_list = []
     date_list = []
-
+    
     # 리스트 만들기
     for date, items in dict(list_query).items():
         date_list.append(date[0:4] + "/" + date[4:6] + "/" + date[6:8])
         au_list.append(items["AU"])
         ag_list.append(items["AG"])
-
+    
     # 마지막 날짜 가져오기
     # ag_last = ag_list[:-1]
     # au_last = au_list[:-1]
     # date_last = date_list[:-1]
-
+    
     # 가져온 데이터를 스텝으로 줄이기 (-1: 마지막 날짜 제외)
     ag_list = ag_list[:-1:step]
     au_list = au_list[:-1:step]
     date_list = date_list[:-1:step]
-
+    
     # 제한길이 -1 까지 리스트 줄이기(마지막 날짜가 들어갈 자리확보)
     # while len(ag_list) != (limit_len - 1):
     #     print(len(ag_list))
     #     ag_list.pop(18)
     #     au_list.pop(18)
     #     date_list.pop(18)
-
+    
     # #마지막 날짜의 가격 합치기
     # ag_list.append(ag_last)
     # au_list.append(au_last)
     # date_list.append(date_last)
-
+    
     # print(len(ag_list), ag_list[:-1])
     # print(len(au_list), au_list[:-1])
     # print(len(date_list), date_list[:-1])
-
+    
     db.reference(f"/{SHORTBUF_DB_PATH}").set({"AU": au_list[:-1],
                                               "AG": ag_list[:-1],
                                               "DATE": date_list[:-1]
@@ -276,7 +340,7 @@ def getShortChartBuf():
 def getLongChartBuf():
     start_Date = 19920918
     limit_len = 279
-
+    
     print("Long Chart", datetime.utcnow())
     try:
         cred = credentials.Certificate(
@@ -285,53 +349,53 @@ def getLongChartBuf():
         print("Success Firebase Upload")
     except:
         pass
-
+    
     ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().start_at(str(start_Date))
-
+    
     list_query = ref.get()
-
+    
     # print('query length', len(list_query))
-
+    
     # 가져온 데이터를 제한길이로 나눔
     step = len(list_query) // limit_len
     # print(len(list_query) // limit_len)
-
+    
     ag_list = []
     au_list = []
     date_list = []
-
+    
     # 리스트 만들기
     for date, items in dict(list_query).items():
         date_list.append(date)
         au_list.append(items["AU"])
         ag_list.append(items["AG"])
-
+    
     # 마지막 날짜 가져오기
     # ag_last = ag_list[:-1]
     # au_last = au_list[:-1]
     # date_last = date_list[:-1]
-
+    
     # 가져온 데이터를 스텝으로 줄이기 (-1: 마지막 날짜 제외)
     ag_list = ag_list[:-1:step]
     au_list = au_list[:-1:step]
     date_list = date_list[:-1:step]
-
+    
     # 제한길이 -1 까지 리스트 줄이기(마지막 날짜가 들어갈 자리확보)
     # while len(ag_list) != (limit_len - 1):
     #     print(len(ag_list))
     #     ag_list.pop(18)
     #     au_list.pop(18)
     #     date_list.pop(18)
-
+    
     # #마지막 날짜의 가격 합치기
     # ag_list.append(ag_last)
     # au_list.append(au_last)
     # date_list.append(date_last)
-
+    
     # print(len(ag_list),ag_list)
     # print(len(au_list),au_list)
     # print(len(date_list),date_list)
-
+    
     db.reference(f"/{LONGBUF_DB_PATH}").set({"AU": au_list,
                                              "AG": ag_list,
                                              "DATE": date_list
@@ -356,7 +420,7 @@ def encrypt(data_input: dict):
     date_slot = data_input["DATE"]
     decrypt = {}
     encrypt = {}
-
+    
     for key in slot.keys():
         number6 = random.randint(1, random.randint(1, 5) ** 10)
         floatNum1 = random.randint(0, 9)
@@ -364,16 +428,16 @@ def encrypt(data_input: dict):
         floatNum3 = random.randint(0, 9)
         floatNum4 = random.randint(0, 9)
         floatNum5 = random.randint(0, 9)
-
+        
         slot[key] = float(f"{number6}.{floatNum1}{floatNum2}{floatNum3}{floatNum4}{floatNum5}")
-
+    
     for key in slot.keys():
         decrypt[key] = data_input[key] / float(slot[key])
-
+    
     for key in slot.keys():
         encrypt[key] = decrypt[key] * float(slot[key])
     slot["DATE"] = date_slot
-
+    
     return {"open_Database": slot, "decrypt_Database": decrypt}
 
 
@@ -382,55 +446,55 @@ def message(topic_limit):
     # See documentation on defining a message payload.
     try:
         ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
-
+        
         # print(ref)
-
+        
         title = f"Price Alert"
-
+        
         price_list = [1.0, 2.0, 3.0]
-
+        
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
-
+        
         topic_list = ["Alpha", "Beta", "Gamma"]
-
+        
         for idx, price in enumerate(price_list):
-
+            
             body_Slot = {}
-
+            
             if AU >= price:
                 if not topic_limit[idx]:
                     body_Slot['AU'] = [ref['AU'], F"▲ (+{str(AU)[:5 - 1]}%)"]
                     topic_limit[idx] = True
-
+            
             elif AU <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 1 / 4)]:
                     body_Slot['AU'] = [ref['AU'], F"▼ ({str(AU)[:5]}%)"]
                     topic_limit[idx + int(len(topic_limit) * 1 / 4)] = True
-
+            
             if AG >= price:
                 if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
                     body_Slot['AG'] = [ref['AG'], F"▲ (+{str(AG)[:5 - 1]}%)"]
                     topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
-
+            
             elif AG <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 3 / 4)]:
                     body_Slot['AG'] = [ref['AG'], F"▼ ({str(AG)[:5]}%)"]
                     topic_limit[idx + int(len(topic_limit) * 3 / 4)] = True
-
+            
             body_string = ""
             gold_buf = ""
             silver_buf = ""
-
+            
             if "AU" in body_Slot.keys():
                 gold_buf = f"Gold : ${body_Slot['AU'][0]}{body_Slot['AU'][1]}"
-
+            
             if "AG" in body_Slot.keys():
                 if "AU" in body_Slot.keys():
                     silver_buf = f", Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
                 else:
                     silver_buf = f"Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
-
+            
             body_string = gold_buf + silver_buf
             if body_string != "":
                 # See documentation on defining a message payload.
@@ -438,7 +502,7 @@ def message(topic_limit):
                     android=messaging.AndroidConfig(
                         ttl=timedelta(seconds=3600),
                         priority='normal',
-
+                        
                         notification=messaging.AndroidNotification(
                             title=title,
                             body=body_string,
@@ -447,7 +511,7 @@ def message(topic_limit):
                             sound='default'
                         ),
                     ),
-
+                    
                     topic=topic_list[idx]
                     # token=registration_token
                 )
@@ -473,20 +537,20 @@ if __name__ == "__main__":
     sched.add_job(data, 'cron', minute='*/5', hour='0-20', day_of_week='mon-fri', id="day")
     sched.add_job(data, 'cron', minute='*/5', hour='22-23', day_of_week='mon-thu', id="early_start")
     sched.add_job(data, 'cron', minute='*/5', hour='22-23', day_of_week='sun', id="sun_early_start")
-
+    
     sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")
-
+    
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")
-
+    
     # sched.add_job(data, 'cron', minute='0-59/11', hour='22-23', day_of_week='sun-fri', id="night")
     # sched.add_job(data, 'cron', hour='0-7', minute='*/5', second='18', day_of_week='sat', id="data_sat")
     # sched.add_job(quit_chrome_hoilday, 'cron', hour='7', minute='8', day_of_week='sat', id="holiday_quit")
     # sched.add_job(website, 'cron', day='*/1', hour='5', minute='18', id="website")
-
+    
     print('scheduler start', datetime.utcnow())
     sched.start()
-
+    
     while True:
         time.sleep(18)

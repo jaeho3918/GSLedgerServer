@@ -167,7 +167,7 @@ import requests
 #
 # encrypt(data)
 
-URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
+URL = 'https://xecdapi.xe.com/v1/convert_to.json/?to=USD&from=XAU,XAG&amount=1000'
 
 response = requests.get(URL)
 print(response.status_code)

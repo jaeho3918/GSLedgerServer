@@ -9,6 +9,47 @@ import csv
 import logging
 import random
 from firebase_admin import messaging
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+chrome_option = Options()
+chrome_option.add_argument("--no-sandbox")
+chrome_option.add_argument("--disable-dev-shm-usage")
+chrome_option.add_argument("disable-gpu")  # 가속 사용 x
+chrome_option.add_argument("lang=ko_KR")  # 가짜 플러그인 탑재
+
+chrome_option.add_argument(
+    'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')  # user-agent 이름 설정
+prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
+                                                    'geolocation': 2, 'notifications': 2,
+                                                    'auto_select_certificate': 2, 'fullscreen': 2,
+                                                    'mouselock': 2, 'mixed_script': 2, 'media_stream': 2,
+                                                    'media_stream_mic': 2, 'media_stream_camera': 2,
+                                                    'protocol_handlers': 2, 'ppapi_broker': 2,
+                                                    'automatic_downloads': 2, 'midi_sysex': 2,
+                                                    'push_messaging': 2, 'ssl_cert_decisions': 2,
+                                                    'metro_switch_to_desktop': 2,
+                                                    'protected_media_identifier': 2, 'app_banner': 2,
+                                                    'site_engagement': 2, 'durable_storage': 2}}
+
+chrome_option.add_experimental_option('prefs', prefs)
+chrome_option.add_argument("start-maximized")
+chrome_option.add_argument("disable-infobars")
+chrome_option.add_argument("--disable-extensions")
+
+CHROMDRIVER_PATH = f'./chromedriver'
+
+URLS = {
+    "AU": "https://kr.investing.com/commodities/gold-historical-data",
+    "AG": "https://kr.investing.com/commodities/silver-historical-data"
+}
+
+XPATHS = {
+    "AU": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
+    "AG": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
+}
 
 real_result = {}
 last_result = {}
@@ -429,9 +470,9 @@ def messageLimit():
 if __name__ == "__main__":
     data()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
+    sched.add_job(data, 'cron', minute='*/5', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='*/5', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data, 'cron', minute='*/5', hour='22-23', day_of_week='sun', id="sun_early_start")
 
     sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")

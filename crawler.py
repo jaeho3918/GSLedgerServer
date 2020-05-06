@@ -11,6 +11,7 @@ import random
 from firebase_admin import messaging
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import numpy as np
 
 chrome_option = Options()
 chrome_option.add_argument("--no-sandbox")
@@ -63,7 +64,6 @@ CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
 OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
 REALTIMESTACK_DB_PATH = "AeBuYTkRW4x0B2cQQQIt"
 
-
 URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
 
 topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
@@ -86,9 +86,8 @@ def chrome_reboot():
     global last_result
     global driver
 
-
     if driver != 6:
-        time.sleep(random.randint(1,3))
+        time.sleep(random.randint(1, 3))
         real_result = {}
         last_result = {}
         driver.close()
@@ -173,7 +172,7 @@ def closeTime(now):
 
 def data():
     global driver
-    time.sleep(random.randint(1,3))
+    time.sleep(random.randint(1, 3))
     if driver == 6:
         driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
         for idx in range(2):
@@ -274,11 +273,10 @@ def data():
 
     ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
     count = ref.get()
-    ref.update({ real_result["DATE"]:real_result})
+    ref.update({real_result["DATE"]: real_result})
 
     if len(count) >= 70:
         ref.child(sorted(count.keys())[0]).delete()
-
 
     logger.info("Crawler Upload")
 
@@ -356,24 +354,14 @@ def getShortChartBuf():
     au_list = au_list[:-1:step]
     date_list = date_list[:-1:step]
 
-    # 제한길이 -1 까지 리스트 줄이기(마지막 날짜가 들어갈 자리확보)
-    # while len(ag_list) != (limit_len - 1):
-    #     print(len(ag_list))
-    #     ag_list.pop(18)
-    #     au_list.pop(18)
-    #     date_list.pop(18)
+    ag_np = np.array(ag_list)
+    au_np = np.array(au_list)
 
-    # #마지막 날짜의 가격 합치기
-    # ag_list.append(ag_last)
-    # au_list.append(au_last)
-    # date_list.append(date_last)
-
-    # print(len(ag_list), ag_list[:-1])
-    # print(len(au_list), au_list[:-1])
-    # print(len(date_list), date_list[:-1])
+    au_ag_ratio = au_np / ag_np
 
     db.reference(f"/{SHORTBUF_DB_PATH}").set({"AU": au_list[:-1],
                                               "AG": ag_list[:-1],
+                                              "RATIO": list(au_ag_ratio),
                                               "DATE": date_list[:-1]
                                               })
     logger.info("Crawler Upload")
@@ -408,7 +396,7 @@ def getLongChartBuf():
 
     # 리스트 만들기
     for date, items in dict(list_query).items():
-        date_list.append(date)
+        date_list.append(date[0:4] + "/" + date[4:6] + "/" + date[6:8])
         au_list.append(items["AU"])
         ag_list.append(items["AG"])
 
@@ -422,24 +410,14 @@ def getLongChartBuf():
     au_list = au_list[:-1:step]
     date_list = date_list[:-1:step]
 
-    # 제한길이 -1 까지 리스트 줄이기(마지막 날짜가 들어갈 자리확보)
-    # while len(ag_list) != (limit_len - 1):
-    #     print(len(ag_list))
-    #     ag_list.pop(18)
-    #     au_list.pop(18)
-    #     date_list.pop(18)
+    ag_np = np.array(ag_list)
+    au_np = np.array(au_list)
 
-    # #마지막 날짜의 가격 합치기
-    # ag_list.append(ag_last)
-    # au_list.append(au_last)
-    # date_list.append(date_last)
-
-    # print(len(ag_list),ag_list)
-    # print(len(au_list),au_list)
-    # print(len(date_list),date_list)
+    au_ag_ratio = au_np / ag_np
 
     db.reference(f"/{LONGBUF_DB_PATH}").set({"AU": au_list,
                                              "AG": ag_list,
+                                             "RATIO": list(au_ag_ratio),
                                              "DATE": date_list
                                              })
 
@@ -506,22 +484,22 @@ def message(topic_limit):
 
             if AU >= price:
                 if not topic_limit[idx]:
-                    body_Slot['AU'] = [format(ref['AU'],'.2f'), F"▲ (+{format(AU,'.2f')}%)"]
+                    body_Slot['AU'] = [format(ref['AU'], '.2f'), F"▲ (+{format(AU, '.2f')}%)"]
                     topic_limit[idx] = True
 
             elif AU <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 1 / 4)]:
-                    body_Slot['AU'] = [format(ref['AU'],'.2f'), F"▼ ({format(AU,'.2f')}%)"]
+                    body_Slot['AU'] = [format(ref['AU'], '.2f'), F"▼ ({format(AU, '.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 1 / 4)] = True
 
             if AG >= price:
                 if not topic_limit[idx + int(len(topic_limit) * 2 / 4)]:
-                    body_Slot['AG'] = [format(ref['AG'],'.2f'), F"▲ (+{format(AG,'.2f')}%)"]
+                    body_Slot['AG'] = [format(ref['AG'], '.2f'), F"▲ (+{format(AG, '.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 2 / 4)] = True
 
             elif AG <= -1 * price:
                 if not topic_limit[idx + int(len(topic_limit) * 3 / 4)]:
-                    body_Slot['AG'] = [format(ref['AG'],'.2f'), F"▼ ({format(AG,'.2f')}%)"]
+                    body_Slot['AG'] = [format(ref['AG'], '.2f'), F"▼ ({format(AG, '.2f')}%)"]
                     topic_limit[idx + int(len(topic_limit) * 3 / 4)] = True
 
             body_string = ""
@@ -574,14 +552,16 @@ def messageLimit():
 
 
 if __name__ == "__main__":
-    # driver_setting()
+    # getShortChartBuf()
+    # getLongChartBuf()
     # data()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data, 'cron', minute='*/1', hour='0-20', day_of_week='mon-fri', id="day")
     sched.add_job(data, 'cron', minute='*/1', hour='22-23', day_of_week='mon-thu', id="early_start")
     sched.add_job(data, 'cron', minute='*/1', hour='22-23', day_of_week='sun', id="sun_early_start")
 
-    sched.add_job(chrome_reboot, 'cron', minute='18',second='36', hour='*/3', day_of_week='mon-fri', id="chrome_reboot")
+    sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
+                  id="chrome_reboot")
 
     sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")

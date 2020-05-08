@@ -527,8 +527,8 @@ def message(topic_limit):
                             title=title,
                             body=body_string,
                             icon='',
-                            color='#fd6166',
-                            sound='default'
+                            color='#fd6166'
+                            # sound='default'
                         ),
                     ),
 

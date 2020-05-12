@@ -516,8 +516,9 @@ def message(topic_limit):
                 else:
                     silver_buf = f"Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
 
-            body_string = gold_buf + silver_buf + f" Gold/Silver Ratio {format(RATIO, '.2f')}"
+            body_string = gold_buf + silver_buf
             if body_string != "":
+                body_string = gold_buf + silver_buf + f" Gold/Silver Ratio {format(RATIO, '.2f')}"
                 # See documentation on defining a message payload.
                 message = messaging.Message(
                     android=messaging.AndroidConfig(

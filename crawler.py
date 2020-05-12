@@ -475,6 +475,7 @@ def message(topic_limit):
 
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
+        RATIO = ref['AU'] / ref['AG']
 
         topic_list = ["Alpha", "Beta", "Gamma"]
 
@@ -515,7 +516,7 @@ def message(topic_limit):
                 else:
                     silver_buf = f"Silver : ${body_Slot['AG'][0]}{body_Slot['AG'][1]}"
 
-            body_string = gold_buf + silver_buf
+            body_string = gold_buf + silver_buf + f" Gold/Silver Ratio {format(RATIO, '.2f')}"
             if body_string != "":
                 # See documentation on defining a message payload.
                 message = messaging.Message(

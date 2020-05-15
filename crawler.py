@@ -38,19 +38,28 @@ chrome_option.add_argument("start-maximized")
 chrome_option.add_argument("disable-infobars")
 chrome_option.add_argument("--disable-extensions")
 
-CHROMDRIVER_PATH = f'./chromedriver'
+CHROMDRIVER_PATH = f'./chromedriver_win72.exe'
 
-URLS = {
-    "AU": "https://kr.investing.com/currencies/xau-usd",
-    "AG": "https://kr.investing.com/currencies/xag-usd"
-}
+# URLS = {
+#     "AU": "https://kr.investing.com/currencies/xau-usd",
+#     "AG": "https://kr.investing.com/currencies/xag-usd"
+# }
+#
+# XPATHS = {
+#     "AU": ['//*[@id="last_last"]',
+#            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
+#     "AG": ['//*[@id="last_last"]',
+#            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
+# }
+
+URL = "https://goldprice.org/ko/gold-price.html"
 
 XPATHS = {
-    "AU": ['//*[@id="last_last"]',
-           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
-    "AG": ['//*[@id="last_last"]',
-           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
+    "AU": '//*[@id="gpxtickerLeft_price"]',
+    "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
+
+
 
 real_result = {}
 last_result = {}
@@ -96,7 +105,7 @@ def chrome_reboot():
     driver = 6
 
 
-def driver_setting():
+def driver_setting18():
     global real_result
     global last_result
     global driver
@@ -112,77 +121,19 @@ def driver_setting():
 
     driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
-    for idx in range(2):
-        driver.execute_script('window.open("about:blank", "_blank");')
 
-    tabs = driver.window_handles
-    idx1 = 0
-    for key, value in URLS.items():
-        driver.switch_to_window(tabs[idx1])
-        driver.get(value)
-        idx1 += 1
+URL18 = "https://goldprice.org/ko/gold-price.html"
 
+XPATHS18 = {
+    "AU": '//*[@id="gpxtickerLeft_price"]',
+    "AG": '//*[@id="gpxtickerMiddle_price"]'
+}
 
-def closeTime(now):
-    closeTime_dict = {
-        "year": now.year,
-        "month": now.month,
-        "day": now.day,
-        "hour": 21,
-        "minute": 0,
-        "second": 0,
-        "weekday": now.weekday()
-    }
-    # closeTime_dict[ "value"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day'] + 1}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}/{closeTime_dict['weekday']}"
-    closeTime_dict[
-        "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
-    closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
-
-    if now >= closeTime_dict["value"]:  #
-        buf_month = ""
-        buf_day = ""
-
-        if now.month < 10:
-            buf_month = f"0{now.month}"
-        else:
-            buf_month = f"{now.month}"
-
-        if now.day + 1 < 10:
-            buf_day = f"0{now.day + 1}"
-        else:
-            buf_day = f"{now.day + 1}"
-
-        return f"{now.year}{buf_month}{buf_day}"
-    else:
-        buf_month = ""
-        buf_day = ""
-
-        if now.month < 10:
-            buf_month = f"0{now.month}"
-        else:
-            buf_month = f"{now.month}"
-
-        if now.day < 10:
-            buf_day = f"0{now.day}"
-        else:
-            buf_day = f"{now.day}"
-
-        return f"{now.year}{buf_month}{buf_day}"
-
-
-def data():
+def data18():
     global driver
     time.sleep(random.randint(1, 3))
     if driver == 6:
         driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
-        for idx in range(2):
-            driver.execute_script('window.open("about:blank", "_blank");')
-        tabs = driver.window_handles
-        idx1 = 0
-        for key, value in URLS.items():
-            driver.switch_to_window(tabs[idx1])
-            driver.get(value)
-            idx1 += 1
 
     print("crawler Start : ", datetime.utcnow())
     real_result = {}
@@ -190,19 +141,11 @@ def data():
     result = {}
     tabs = driver.window_handles
     idx1 = 0
-    for key, value in URLS.items():
-        driver.switch_to_window(tabs[idx1])
-        idx1 += 1
 
-        for idx, xpath in enumerate(XPATHS[key]):
-            result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
-            # print(result[key])
-
-            if len(key) == 2:
-                if idx == 1:
-                    real_result[f"YES{key}"] = float(result[key])
-                else:
-                    real_result[key] = float(result[key])
+    driver.get(URL18)
+    real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
+    real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
+    # print(result[key])
 
     response = requests.get(URL)
     for key, value in response.json()["quotes"].items():
@@ -213,7 +156,7 @@ def data():
 
     f = open('YES.csv', 'r')
     rdr = csv.reader(f)
-    for line in rdr:
+    for line in rdr: # line[0]:XAG  line[0]: 18.18
         real_result[line[0]] = float(line[1])
 
     # except:
@@ -283,40 +226,249 @@ def data():
     global topic_limit
     message(topic_limit)
 
-    time.sleep(random.randint(6, 66))
-
     driver.close()
     driver.quit()
     driver = 6
 
-def setYES():
+# def driver_setting():
+#     global real_result
+#     global last_result
+#     global driver
+#
+#     real_result = {}
+#     last_result = {}
+#
+#     if driver != 6:
+#         driver.close()
+#         driver.quit()
+#
+#     print("driver_stteing Start : ", datetime.utcnow())
+#
+#     driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+#
+#     for idx in range(2):
+#         driver.execute_script('window.open("about:blank", "_blank");')
+#
+#     tabs = driver.window_handles
+#     idx1 = 0
+#     for key, value in URLS.items():
+#         driver.switch_to_window(tabs[idx1])
+#         driver.get(value)
+#         idx1 += 1
+#
+# def data():
+#     global driver
+#     time.sleep(random.randint(1, 3))
+#     if driver == 6:
+#         driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+#         for idx in range(2):
+#             driver.execute_script('window.open("about:blank", "_blank");')
+#         tabs = driver.window_handles
+#         idx1 = 0
+#         for key, value in URLS.items():
+#             driver.switch_to_window(tabs[idx1])
+#             driver.get(value)
+#             idx1 += 1
+#
+#     print("crawler Start : ", datetime.utcnow())
+#     real_result = {}
+#     last_result = {}
+#     result = {}
+#     tabs = driver.window_handles
+#     idx1 = 0
+#     for key, value in URLS.items():
+#         driver.switch_to_window(tabs[idx1])
+#         idx1 += 1
+#
+#         for idx, xpath in enumerate(XPATHS[key]):
+#             result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+#             # print(result[key])
+#
+#             if len(key) == 2:
+#                 if idx == 1:
+#                     real_result[f"YES{key}"] = float(result[key])
+#                 else:
+#                     real_result[key] = float(result[key])
+#
+#     response = requests.get(URL)
+#     for key, value in response.json()["quotes"].items():
+#         if (key[-3:] == "XAU") | (key[-3:] == "XAG"):
+#             real_result[key[-2:]] = ((1 / value) + real_result[key[-2:]]) / 2
+#         else:
+#             real_result[key[-3:]] = value
+#
+#     f = open('YES.csv', 'r')
+#     rdr = csv.reader(f)
+#     for line in rdr:
+#         real_result[line[0]] = float(line[1])
+#
+#     # except:
+#     #     logger.info("Crawler ERROR")
+#
+#     now = datetime.utcnow()
+#
+#     real_result1 = real_result.copy()
+#
+#     real_result["DATE"] = response.json()["timestamp"]
+#     print("real Databse : ", datetime.utcnow().timestamp(), real_result)
+#
+#     now = datetime.utcnow()
+#     real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
+#     # print(datetime.utcnow())
+#     # print(real_result1["DATE"])
+#
+#     try:
+#         last_buf = real_result.copy()
+#         last_buf.pop("DATE")
+#         last_buf.pop("YESAU")
+#         last_buf.pop("YESAG")
+#
+#     except:
+#         logger.info("Crawler ERROR")
+#
+#     last_date = closeTime(now)
+#     last_result[last_date] = last_buf
+#     # print(last_result)
+#
+#     #     # print(real_result, last_result)
+#
+#     try:
+#         cred = credentials.Certificate(
+#             "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+#         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
+#         print("Success Firebase Upload")
+#     except:
+#         pass
+#
+#     ref = db.reference(f"/{REALTIME_DB_PATH}")
+#     ref.update(real_result)
+#
+#     ref = db.reference(f"/{REALTIME1_DB_PATH}")
+#     ref.update(real_result1)
+#
+#     ref = db.reference(f"/{LASTTIME_DB_PATH}")
+#     ref.update(last_result)
+#
+#     light = encrypt(real_result1)  # "open_Database"     "decrypt_Database"
+#
+#     ref = db.reference(f"/{OPEN_REALDATA}")
+#     ref.update(light["open_Database"])
+#
+#     ref = db.reference(f"/{CLOSE_REALDATA}")
+#     ref.update(light["decrypt_Database"])
+#
+#     ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
+#     count = ref.get()
+#     ref.update({real_result["DATE"]: real_result})
+#
+#     if len(count) >= 70:
+#         ref.child(sorted(count.keys())[0]).delete()
+#
+#     logger.info("Crawler Upload")
+#
+#     global topic_limit
+#     message(topic_limit)
+#
+#     time.sleep(random.randint(6, 66))
+#
+#     driver.close()
+#     driver.quit()
+#     driver = 6
+# def setYES():
+#     global driver
+#
+#     print("crawler Start : ", datetime.utcnow())
+#
+#     result = {}
+#     tabs = driver.window_handles
+#     idx1 = 0
+#     for key, value in URLS.items():
+#         driver.switch_to_window(tabs[idx1])
+#         idx1 += 1
+#
+#         for idx, xpath in enumerate(XPATHS[key]):
+#
+#             result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+#             # print(result[key])
+#
+#             if len(key) == 2:
+#                 if idx == 1:
+#                     real_result[f"YES{key}"] = float(result[key])
+#
+#     response = requests.get(URL)
+#     f = open('YES.csv', 'w', newline='')
+#     wr = csv.writer(f)
+#     wr.writerow(['YESAU', 1 / response.json()["quotes"]["USDXAU"]])
+#     wr.writerow(['YESAG', 1 / response.json()["quotes"]["USDXAG"]])
+#     f.close()
+def closeTime(now):
+    closeTime_dict = {
+        "year": now.year,
+        "month": now.month,
+        "day": now.day,
+        "hour": 21,
+        "minute": 0,
+        "second": 0,
+        "weekday": now.weekday()
+    }
+    # closeTime_dict[ "value"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day'] + 1}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}/{closeTime_dict['weekday']}"
+    closeTime_dict[
+        "stringValue"] = f"{closeTime_dict['year']}/{closeTime_dict['month']}/{closeTime_dict['day']}/{closeTime_dict['hour']}/{closeTime_dict['minute']}/{closeTime_dict['second']}"
+    closeTime_dict["value"] = datetime.strptime(closeTime_dict["stringValue"], '%Y/%m/%d/%H/%M/%S')
+
+    if now >= closeTime_dict["value"]:  #
+        buf_month = ""
+        buf_day = ""
+
+        if now.month < 10:
+            buf_month = f"0{now.month}"
+        else:
+            buf_month = f"{now.month}"
+
+        if now.day + 1 < 10:
+            buf_day = f"0{now.day + 1}"
+        else:
+            buf_day = f"{now.day + 1}"
+
+        return f"{now.year}{buf_month}{buf_day}"
+    else:
+        buf_month = ""
+        buf_day = ""
+
+        if now.month < 10:
+            buf_month = f"0{now.month}"
+        else:
+            buf_month = f"{now.month}"
+
+        if now.day < 10:
+            buf_day = f"0{now.day}"
+        else:
+            buf_day = f"{now.day}"
+
+        return f"{now.year}{buf_month}{buf_day}"
+
+def setYES18():
     global driver
 
     print("crawler Start : ", datetime.utcnow())
 
+    real_result = {}
+    last_result = {}
     result = {}
     tabs = driver.window_handles
     idx1 = 0
-    for key, value in URLS.items():
-        driver.switch_to_window(tabs[idx1])
-        idx1 += 1
 
-        for idx, xpath in enumerate(XPATHS[key]):
-
-            result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
-            # print(result[key])
-
-            if len(key) == 2:
-                if idx == 1:
-                    real_result[f"YES{key}"] = float(result[key])
+    driver.get(URL18)
+    real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
+    real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
+    # print(result[key])
 
     response = requests.get(URL)
     f = open('YES.csv', 'w', newline='')
     wr = csv.writer(f)
-    wr.writerow(['YESAU', 1 / response.json()["quotes"]["USDXAU"]])
-    wr.writerow(['YESAG', 1 / response.json()["quotes"]["USDXAG"]])
+    wr.writerow(['AU', 1 / response.json()["quotes"]["USDXAU"]])
+    wr.writerow(['AG', 1 / response.json()["quotes"]["USDXAG"]])
     f.close()
-
 
 def getShortChartBuf():
     limit_len = 70
@@ -370,7 +522,6 @@ def getShortChartBuf():
                                               "DATE": date_list[:-1]
                                               })
     logger.info("Crawler Upload")
-
 
 def getLongChartBuf():
     start_Date = 19920918
@@ -561,17 +712,17 @@ def messageLimit():
 if __name__ == "__main__":
     # getShortChartBuf()
     # getLongChartBuf()
-    data()
+    # data18()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
-    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
+    sched.add_job(data18, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
 
     # sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
     #               id="chrome_reboot")
 
-    sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
-    sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")
+    sched.add_job(setYES18, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
+    sched.add_job(messageLimit, 'cron', minute='15', hour='22', day_of_week='mon-fri', id="reset_message_limit")
 
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")

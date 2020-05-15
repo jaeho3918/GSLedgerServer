@@ -38,8 +38,8 @@ chrome_option.add_argument("start-maximized")
 chrome_option.add_argument("disable-infobars")
 chrome_option.add_argument("--disable-extensions")
 
-CHROMDRIVER_PATH = f'./chromedriver_win72.exe'
-
+# CHROMDRIVER_PATH = f'./chromedriver_win72.exe'
+CHROMDRIVER_PATH = f'./chromedriver'
 # URLS = {
 #     "AU": "https://kr.investing.com/currencies/xau-usd",
 #     "AG": "https://kr.investing.com/currencies/xag-usd"
@@ -59,8 +59,6 @@ XPATHS = {
     "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
 
-
-
 real_result = {}
 last_result = {}
 
@@ -71,11 +69,12 @@ SHORTBUF_DB_PATH = "U6BUnY9WzFw7KZFEfg"
 LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
 CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
 OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
-REALTIMESTACK_DB_PATH = "AeBuYTkRW4x0B2cQQQIt"
+REALTIMESTACK_DB_PATH = "AeBuYTRW4x0B2QQQIt"
+SHORT18BUF_DB_PATH = "mkD16PiNYs63Pdle7v"
 
 URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
 
-topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
+# topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
 
 logging.basicConfig(filename=f'./log_Crawler.log')
 logger = logging.getLogger(__name__)
@@ -129,9 +128,10 @@ XPATHS18 = {
     "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
 
+
 def data18():
     global driver
-    time.sleep(random.randint(1, 3))
+    time.sleep(random.randint(66, 369))
     if driver == 6:
         driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
@@ -150,14 +150,15 @@ def data18():
     response = requests.get(URL)
     for key, value in response.json()["quotes"].items():
         if (key[-3:] == "XAU") | (key[-3:] == "XAG"):
+            # if (key[-3:] == "XAU"):
             real_result[key[-2:]] = ((1 / value) + real_result[key[-2:]]) / 2
         else:
             real_result[key[-3:]] = value
 
-    f = open('YES.csv', 'r')
-    rdr = csv.reader(f)
-    for line in rdr: # line[0]:XAG  line[0]: 18.18
-        real_result[line[0]] = float(line[1])
+    with open('YES.csv', 'r') as f:
+        rdr = csv.reader(f)
+        for line in rdr:  # line[0]:XAG  line[0]: 18.18
+            real_result[line[0]] = float(line[1])
 
     # except:
     #     logger.info("Crawler ERROR")
@@ -216,19 +217,21 @@ def data18():
 
     ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
     count = ref.get()
-    ref.update({real_result["DATE"]: real_result})
-
+    # ref.update({real_result["DATE"]: real_result})
+    ref.update({real_result["DATE"]: {"DATE": real_result["DATE"], "AU": real_result["AU"], "AG": real_result["AG"]}})
     if len(count) >= 70:
         ref.child(sorted(count.keys())[0]).delete()
 
     logger.info("Crawler Upload")
 
-    global topic_limit
-    message(topic_limit)
+    message()
+
+    time.sleep(random.randint(66, 110))
 
     driver.close()
     driver.quit()
     driver = 6
+
 
 # def driver_setting():
 #     global real_result
@@ -447,6 +450,7 @@ def closeTime(now):
 
         return f"{now.year}{buf_month}{buf_day}"
 
+
 def setYES18():
     global driver
 
@@ -469,6 +473,7 @@ def setYES18():
     wr.writerow(['AU', 1 / response.json()["quotes"]["USDXAU"]])
     wr.writerow(['AG', 1 / response.json()["quotes"]["USDXAG"]])
     f.close()
+
 
 def getShortChartBuf():
     limit_len = 70
@@ -522,6 +527,7 @@ def getShortChartBuf():
                                               "DATE": date_list[:-1]
                                               })
     logger.info("Crawler Upload")
+
 
 def getLongChartBuf():
     start_Date = 19920918
@@ -617,10 +623,25 @@ def encrypt(data_input: dict):
     return {"open_Database": slot, "decrypt_Database": decrypt}
 
 
-def message(topic_limit):
+def message():
     print("Message Start", datetime.utcnow())
-    # See documentation on defining a message payload.
+
+    topic_limit = []
+    with open('MESSAGE_LIMIT', 'r') as f:
+        rdr = csv.reader(f)
+        for line in rdr:  # line[0]:XAG  line[0]: 18.18
+            for value in line:
+                if value.strip() == "False":
+                    topic_limit.append(False)
+                elif value.strip() == "True":
+                    topic_limit.append(True)
+
     try:
+        f = open('MESSAGE_LIMIT.csv', 'r')
+        rdr = csv.reader(f)
+        for line in rdr:  # line[0]:XAG  line[0]: 18.18
+            real_result[line[0]] = float(line[1])
+
         ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
 
         # print(ref)
@@ -663,6 +684,10 @@ def message(topic_limit):
             gold_buf = ""
             silver_buf = ""
 
+            with open('MESSAGE_LIMIT', 'w') as f:
+                wr = csv.writer(f)
+                wr.writerow(topic_limit)
+
             if "AU" in body_Slot.keys():
                 gold_buf = f"Gold : ${body_Slot['AU'][0]}{body_Slot['AU'][1]}"
 
@@ -704,9 +729,9 @@ def message(topic_limit):
 
 
 def messageLimit():
-    global topic_limit
-    topic_limit = [False, False, False, False, False, False, False, False, False, False, False, False]
-    print("topic_limit at ", datetime.utcnow(), "  ", topic_limit)
+    with open('MESSAGE_LIMIT', 'w') as f:
+        wr = csv.writer(f)
+        wr.writerow([False, False, False, False, False, False, False, False, False, False, False, False])
 
 
 if __name__ == "__main__":

@@ -283,6 +283,11 @@ def data():
     global topic_limit
     message(topic_limit)
 
+    time.sleep(random.randint(6, 66))
+
+    driver.close()
+    driver.quit()
+    driver = 6
 
 def setYES():
     global driver
@@ -556,14 +561,14 @@ def messageLimit():
 if __name__ == "__main__":
     # getShortChartBuf()
     # getLongChartBuf()
-    # data()
+    data()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data, 'cron', minute='*/1', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data, 'cron', minute='*/1', hour='22-23', day_of_week='mon-thu', id="early_start")
-    sched.add_job(data, 'cron', minute='*/1', hour='22-23', day_of_week='sun', id="sun_early_start")
+    sched.add_job(data, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
 
-    sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
-                  id="chrome_reboot")
+    # sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
+    #               id="chrome_reboot")
 
     sched.add_job(setYES, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='18', hour='22', day_of_week='mon-fri', id="reset_message_limit")

@@ -70,7 +70,7 @@ LONGBUF_DB_PATH = "g8fTq6WJkRcePZR8ZU"
 CLOSE_REALDATA = "isY6Vg9fS6kaqi7skn6jy26"
 OPEN_REALDATA = "UxO6F6BSzPkIWd6SEwqxi3n"
 REALTIMESTACK_DB_PATH = "AeBuYTRW4x0B2QQQIt"
-SHORT18BUF_DB_PATH = "mkD16PiNYs63Pdle7v"
+SSSHORTBUF_DB_PATH = "mkD16PiNYs63Pdle7v"
 
 URL = 'https://apilayer.net/api/live?access_key=84737ed2a48f0373a951aeba973fe0d9&currencies=XAU,XAG,AUD,CAD,CNY,EUR,GBP,INR,JPY,KRW&source=USD&format=1'
 
@@ -226,7 +226,7 @@ def data18():
 
     message()
 
-    time.sleep(random.randint(66, 110))
+    time.sleep(random.randint(66, 111))
 
     driver.close()
     driver.quit()
@@ -529,6 +529,60 @@ def getShortChartBuf():
     logger.info("Crawler Upload")
 
 
+def getSSShortChartBuf():
+    limit_len = 70
+    print("Short Chart", datetime.utcnow())
+    try:
+        cred = credentials.Certificate(
+            "./gsledger-29cad-firebase-adminsdk-o5w6i-639acb814a.json")  # gsledger-29cad-firebase-adminsdk-o5w6i-4213914df7.json
+        firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
+        print("Success Firebase Upload")
+    except:
+        pass
+
+    ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().limit_to_last(limit_len * 1)
+
+    list_query = ref.get()
+
+    # print('query length', len(list_query))
+
+    # 가져온 데이터를 제한길이로 나눔
+    step = len(list_query) // limit_len
+    # print(len(list_query) // limit_len)
+
+    ag_list = []
+    au_list = []
+    date_list = []
+
+    # 리스트 만들기
+    for date, items in dict(list_query).items():
+        date_list.append(date[0:4] + "/" + date[4:6] + "/" + date[6:8])
+        au_list.append(items["AU"])
+        ag_list.append(items["AG"])
+
+    # 마지막 날짜 가져오기
+    # ag_last = ag_list[:-1]
+    # au_last = au_list[:-1]
+    # date_last = date_list[:-1]
+
+    # 가져온 데이터를 스텝으로 줄이기 (-1: 마지막 날짜 제외)
+    ag_list = ag_list[:-1:step]
+    au_list = au_list[:-1:step]
+    date_list = date_list[:-1:step]
+
+    ag_np = np.array(ag_list)
+    au_np = np.array(au_list)
+
+    au_ag_ratio = au_np / ag_np
+
+    db.reference(f"/{SSSHORTBUF_DB_PATH}").set({"AU": au_list[:-1],
+                                              "AG": ag_list[:-1],
+                                              "RATIO": list(au_ag_ratio),
+                                              "DATE": date_list[:-1]
+                                              })
+    logger.info("Crawler Upload")
+
+
 def getLongChartBuf():
     start_Date = 19920918
     limit_len = 279
@@ -637,10 +691,6 @@ def message():
                     topic_limit.append(True)
 
     try:
-        f = open('MESSAGE_LIMIT.csv', 'r')
-        rdr = csv.reader(f)
-        for line in rdr:  # line[0]:XAG  line[0]: 18.18
-            real_result[line[0]] = float(line[1])
 
         ref = db.reference(f"/{REALTIME1_DB_PATH}").get()
 
@@ -749,6 +799,7 @@ if __name__ == "__main__":
     sched.add_job(setYES18, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='15', hour='22', day_of_week='mon-fri', id="reset_message_limit")
 
+    sched.add_job(getSSShortChartBuf, 'cron', minute='24', hour='21', day_of_week='mon-fri', id="ssshortChart")
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")
     sched.add_job(getLongChartBuf, 'cron', minute='18', hour='21', day_of_week='sat', id="longChart")
 

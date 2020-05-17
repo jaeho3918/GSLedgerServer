@@ -91,37 +91,36 @@ real_result = {}
 last_result = {}
 
 
-def chrome_reboot():
-    global real_result
-    global last_result
-    global driver
-
-    if driver != 6:
-        time.sleep(random.randint(1, 3))
-        real_result = {}
-        last_result = {}
-        driver.close()
-        driver.quit()
-
-    driver = 6
-
-
-def driver_setting18():
-    global real_result
-    global last_result
-    global driver
-
-    real_result = {}
-    last_result = {}
-
-    if driver != 6:
-        driver.close()
-        driver.quit()
-
-    print("driver_stteing Start : ", datetime.utcnow())
-
-    driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
-
+# def chrome_reboot():
+#     global real_result
+#     global last_result
+#     global driver
+#
+#     if driver != 6:
+#         time.sleep(random.randint(1, 3))
+#         real_result = {}
+#         last_result = {}
+#         driver.close()
+#         driver.quit()
+#
+#     driver = 6
+#
+#
+# def driver_setting18():
+#     global real_result
+#     global last_result
+#     global driver
+#
+#     real_result = {}
+#     last_result = {}
+#
+#     if driver != 6:
+#         driver.close()
+#         driver.quit()
+#
+#     print("driver_stteing Start : ", datetime.utcnow())
+#
+#     driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
 URL18 = "https://goldprice.org/ko/gold-price.html"
 
@@ -251,7 +250,6 @@ def data18():
     message()
 
     # time.sleep(random.randint(66, 111))
-
 
 # def driver_setting():
 #     global real_result
@@ -564,7 +562,6 @@ def getShortChartBuf():
                                               })
     logger.info("Crawler Upload")
 
-
 def getSSShortChartBuf():
     limit_len = 80
     print("Short Chart", datetime.utcnow())
@@ -616,7 +613,6 @@ def getSSShortChartBuf():
                                                 "DATE": date_list[:-1]
                                                 })
     logger.info("Crawler Upload")
-
 
 def getLongChartBuf():
     start_Date = 19920918
@@ -672,7 +668,6 @@ def getLongChartBuf():
                                              "DATE": date_list
                                              })
 
-
 def encrypt(data_input: dict):
     slot = {
         "AU": 0,
@@ -710,7 +705,6 @@ def encrypt(data_input: dict):
     slot["DATE"] = date_slot
 
     return {"open_Database": slot, "decrypt_Database": decrypt}
-
 
 def message():
     print("Message Start", datetime.utcnow())
@@ -811,7 +805,6 @@ def message():
                 # print('global topic_limit:', topic_limit)
     except:
         print("message error")
-
 
 def messageLimit():
     with open('MESSAGE_LIMIT', 'w') as f:

@@ -3,6 +3,23 @@ import time
 from datetime import datetime
 from datetime import timedelta
 import requests
+import requests
+from apscheduler.schedulers.background import BackgroundScheduler
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+from datetime import datetime, timedelta
+import time
+import csv
+import logging
+import random
+from firebase_admin import messaging
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import numpy as np
+import subprocess
+import os
+
 # def closeTime(now):
 #     closeTime_dict = {
 #         "year": now.year,
@@ -166,19 +183,80 @@ import requests
 #     return {"open_Database": slot, "decrypt_Database": decrypt}
 #
 # encrypt(data)
+# Regulus6MXZ6cV6VGV
+# URL = 'https://xecdapi.xe.com/v1/convert_to.json/?to=USD&from=XAU,XAG&amount=1000'
+#
+# response = requests.get(URL)
+# print(response.status_code)
+# print("timestamp",datetime.fromtimestamp(response.json()["timestamp"]))
+# print("data", response.json()["quotes"])
+#
+# result = {}
+# for key, value in response.json()["quotes"].items():
+#     if (key[-3:] == "XAU")|(key[-3:] == "XAG"):
+#         result[key[-2:]] = 1 / value
+#     else:
+#         result[key[-3:]] = value
+#
+# print(result)
 
-URL = 'https://xecdapi.xe.com/v1/convert_to.json/?to=USD&from=XAU,XAG&amount=1000'
+chrome_option = Options()
+chrome_option.add_argument("--no-sandbox")
+chrome_option.add_argument("--disable-dev-shm-usage")
+chrome_option.add_argument("disable-gpu")  # 가속 사용 x
 
-response = requests.get(URL)
-print(response.status_code)
-print("timestamp",datetime.fromtimestamp(response.json()["timestamp"]))
-print("data", response.json()["quotes"])
+chrome_option.add_argument(
+    'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')  # user-agent 이름 설정
+# prefs = {'profile.default_content_setting_values': {'cookies': 2, 'images': 2, 'plugins': 2, 'popups': 2,
+#                                                     'geolocation': 2, 'notifications': 2,
+#                                                     'auto_select_certificate': 2, 'fullscreen': 2,
+#                                                     'mouselock': 2, 'mixed_script': 2, 'media_stream': 2,
+#                                                     'media_stream_mic': 2, 'media_stream_camera': 2,
+#                                                     'protocol_handlers': 2, 'ppapi_broker': 2,
+#                                                     'automatic_downloads': 2, 'midi_sysex': 2,
+#                                                     'push_messaging': 2, 'ssl_cert_decisions': 2,
+#                                                     'metro_switch_to_desktop': 2,
+#                                                     'protected_media_identifier': 2, 'app_banner': 2,
+#                                                     'site_engagement': 2, 'durable_storage': 2}}
+#
+# chrome_option.add_experimental_option('prefs', prefs)
+chrome_option.add_argument("start-maximized")
+chrome_option.add_argument("disable-infobars")
+chrome_option.add_argument("--disable-extensions")
 
-result = {}
-for key, value in response.json()["quotes"].items():
-    if (key[-3:] == "XAU")|(key[-3:] == "XAG"):
-        result[key[-2:]] = 1 / value
-    else:
-        result[key[-3:]] = value
+# CHROMDRIVER_PATH = f'./chromedriver_win72.exe'
+CHROMDRIVER_PATH = f'./chromedriver'
 
-print(result)
+URL = "https://ip.pe.kr"
+# URL = "https://www.investing.com"  "https://ip.pe.kr"
+
+
+COUNTRY = ["us","jp","uk","ca","is","ch","fr","se","nl"]
+
+
+for i in range(1000):
+    select_idx = random.randint(0,len(COUNTRY)-1)
+    vpn_run = subprocess.Popen(["nordvpn","connect",COUNTRY[select_idx]])
+    print(vpn_run)
+    vpn_run.wait(3*60)
+    print(vpn_run)
+
+    driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+
+    driver.get(URL)
+
+    print("good")
+
+    vpn_quit = subprocess.Popen(["nordvpn","disconnect"])
+    vpn_quit.wait(60)
+
+    print("quit")
+
+    driver.close()
+    driver.quit()
+
+
+
+# driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+#
+# driver.get(URL)

@@ -12,12 +12,12 @@ from firebase_admin import messaging
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import numpy as np
+import subprocess
 
 chrome_option = Options()
 chrome_option.add_argument("--no-sandbox")
 chrome_option.add_argument("--disable-dev-shm-usage")
 chrome_option.add_argument("disable-gpu")  # 가속 사용 x
-chrome_option.add_argument("lang=ko_KR")  # 가짜 플러그인 탑재
 
 chrome_option.add_argument(
     'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36')  # user-agent 이름 설정
@@ -52,12 +52,14 @@ CHROMDRIVER_PATH = f'./chromedriver'
 #            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
 # }
 
-URL = "https://goldprice.org/ko/gold-price.html"
+URL = "https://goldprice.org"
 
 XPATHS = {
     "AU": '//*[@id="gpxtickerLeft_price"]',
     "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
+
+COUNTRY = ["us", "jp", "uk", "ca", "is", "ch", "fr", "se", "nl"]
 
 real_result = {}
 last_result = {}
@@ -128,24 +130,42 @@ XPATHS18 = {
     "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
 
+ssshort_count = 0
+
 
 def data18():
     global driver
-    time.sleep(random.randint(66, 369))
-    if driver == 6:
-        driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+    global ssshort_count
+    try:
+        select_idx = random.randint(0, len(COUNTRY) - 1)
+        vpn_run = subprocess.Popen(["nordvpn", "connect", COUNTRY[select_idx]])
+        vpn_run.wait(3 * 60)
+        time.sleep(random.randint(6, 18))
 
-    print("crawler Start : ", datetime.utcnow())
-    real_result = {}
-    last_result = {}
-    result = {}
-    tabs = driver.window_handles
-    idx1 = 0
+        if driver == 6:
+            driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
-    driver.get(URL18)
-    real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
-    real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
-    # print(result[key])
+        print("crawler Start : ", datetime.utcnow())
+        real_result = {}
+        last_result = {}
+
+        driver.get(URL18)
+        real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
+        real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
+        # print(result[key])
+
+        time.sleep(random.randint(18, 60))
+
+    except:
+        logger.error("crawling.error")
+
+    finally:
+        driver.close()
+        driver.quit()
+        driver = 6
+
+        vpn_quit = subprocess.Popen(["nordvpn", "disconnect"])
+        vpn_quit.wait(60)
 
     response = requests.get(URL)
     for key, value in response.json()["quotes"].items():
@@ -172,8 +192,6 @@ def data18():
 
     now = datetime.utcnow()
     real_result1["DATE"] = f"{datetime.utcnow()}"[:-7]
-    # print(datetime.utcnow())
-    # print(real_result1["DATE"])
 
     try:
         last_buf = real_result.copy()
@@ -182,7 +200,7 @@ def data18():
         last_buf.pop("YESAG")
 
     except:
-        logger.info("Crawler ERROR")
+        logger.info("crawler not exist YESAU/G ")
 
     last_date = closeTime(now)
     last_result[last_date] = last_buf
@@ -196,7 +214,7 @@ def data18():
         firebase_admin.initialize_app(cred, {'databaseURL': 'https://gsledger-29cad.firebaseio.com/'})
         print("Success Firebase Upload")
     except:
-        pass
+        logger.info("crawler fail to credential")
 
     ref = db.reference(f"/{REALTIME_DB_PATH}")
     ref.update(real_result)
@@ -215,22 +233,25 @@ def data18():
     ref = db.reference(f"/{CLOSE_REALDATA}")
     ref.update(light["decrypt_Database"])
 
-    ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
-    count = ref.get()
-    # ref.update({real_result["DATE"]: real_result})
-    ref.update({real_result["DATE"]: {"DATE": real_result["DATE"], "AU": real_result["AU"], "AG": real_result["AG"]}})
-    if len(count) >= 70:
-        ref.child(sorted(count.keys())[0]).delete()
+    if ssshort_count >= 3:
+        ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
+        count = ref.get()
+        # ref.update({real_result["DATE"]: real_result})
+        ref.update(
+            {real_result["DATE"]: {"DATE": real_result["DATE"], "AU": real_result["AU"], "AG": real_result["AG"]}})
+        if len(count) >= 70:
+            ref.child(sorted(count.keys())[0]).delete()
+        ssshort_count = 0
+    else:
+        ssshort_count += 1
 
     logger.info("Crawler Upload")
 
     message()
 
-    time.sleep(random.randint(66, 111))
+    # time.sleep(random.randint(66, 111))
 
-    driver.close()
-    driver.quit()
-    driver = 6
+
 
 
 # def driver_setting():
@@ -404,6 +425,7 @@ def data18():
 #     wr.writerow(['YESAU', 1 / response.json()["quotes"]["USDXAU"]])
 #     wr.writerow(['YESAG', 1 / response.json()["quotes"]["USDXAG"]])
 #     f.close()
+
 def closeTime(now):
     closeTime_dict = {
         "year": now.year,
@@ -476,7 +498,7 @@ def setYES18():
 
 
 def getShortChartBuf():
-    limit_len = 70
+    limit_len = 80
     print("Short Chart", datetime.utcnow())
     try:
         cred = credentials.Certificate(
@@ -486,7 +508,7 @@ def getShortChartBuf():
     except:
         pass
 
-    ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().limit_to_last(limit_len * 2)
+    ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().limit_to_last(limit_len * 5)
 
     list_query = ref.get()
 
@@ -530,7 +552,7 @@ def getShortChartBuf():
 
 
 def getSSShortChartBuf():
-    limit_len = 70
+    limit_len = 80
     print("Short Chart", datetime.utcnow())
     try:
         cred = credentials.Certificate(
@@ -541,7 +563,6 @@ def getSSShortChartBuf():
         pass
 
     ref = db.reference(f"/{LASTTIME_DB_PATH}").order_by_key().limit_to_last(limit_len * 1)
-
     list_query = ref.get()
 
     # print('query length', len(list_query))
@@ -576,10 +597,10 @@ def getSSShortChartBuf():
     au_ag_ratio = au_np / ag_np
 
     db.reference(f"/{SSSHORTBUF_DB_PATH}").set({"AU": au_list[:-1],
-                                              "AG": ag_list[:-1],
-                                              "RATIO": list(au_ag_ratio),
-                                              "DATE": date_list[:-1]
-                                              })
+                                                "AG": ag_list[:-1],
+                                                "RATIO": list(au_ag_ratio),
+                                                "DATE": date_list[:-1]
+                                                })
     logger.info("Crawler Upload")
 
 
@@ -787,11 +808,11 @@ def messageLimit():
 if __name__ == "__main__":
     # getShortChartBuf()
     # getLongChartBuf()
-    # data18()
+    data18()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data18, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
-    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
+    sched.add_job(data18, 'cron', minute='*/3', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data18, 'cron', minute='*/3', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data18, 'cron', minute='*/3', hour='22-23', day_of_week='sun', id="sun_early_start")
 
     # sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
     #               id="chrome_reboot")

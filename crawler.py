@@ -132,6 +132,7 @@ XPATHS18 = {
 
 ssshort_count = 18
 
+
 def data18():
     global driver
     global ssshort_count
@@ -250,8 +251,6 @@ def data18():
     message()
 
     # time.sleep(random.randint(66, 111))
-
-
 
 
 # def driver_setting():
@@ -475,26 +474,41 @@ def closeTime(now):
 
 def setYES18():
     global driver
+    try:
+        select_idx = random.randint(0, len(COUNTRY) - 1)
+        vpn_run = subprocess.Popen(["nordvpn", "connect", COUNTRY[select_idx]])
+        vpn_run.wait(3 * 60)
+        time.sleep(random.randint(6, 18))
 
-    print("crawler Start : ", datetime.utcnow())
+        if driver == 6:
+            driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
-    real_result = {}
-    last_result = {}
-    result = {}
-    tabs = driver.window_handles
-    idx1 = 0
+        print("yes setting : ", datetime.utcnow())
 
-    driver.get(URL18)
-    real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
-    real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
-    # print(result[key])
+        real_result = {}
 
-    response = requests.get(URL)
-    f = open('YES.csv', 'w', newline='')
-    wr = csv.writer(f)
-    wr.writerow(['AU', 1 / response.json()["quotes"]["USDXAU"]])
-    wr.writerow(['AG', 1 / response.json()["quotes"]["USDXAG"]])
-    f.close()
+        driver.get(URL18)
+        real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
+        real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
+        # print(result[key])
+
+        response = requests.get(URL)
+        f = open('YES.csv', 'w', newline='')
+        wr = csv.writer(f)
+        wr.writerow(['AU', ((1 / response.json()["quotes"]["USDXAU"]) + real_result["AU"]) / 2])
+        wr.writerow(['AG', ((1 / response.json()["quotes"]["USDXAG"]) + real_result["AG"]) / 2])
+        f.close()
+
+    except:
+        logger.error("yes setting error")
+
+    finally:
+        driver.close()
+        driver.quit()
+        driver = 6
+
+        vpn_quit = subprocess.Popen(["nordvpn", "disconnect"])
+        vpn_quit.wait(60)
 
 
 def getShortChartBuf():
@@ -817,7 +831,7 @@ if __name__ == "__main__":
     # sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
     #               id="chrome_reboot")
 
-    sched.add_job(setYES18, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
+    sched.add_job(setYES18, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="yes_update")
     sched.add_job(messageLimit, 'cron', minute='15', hour='21', day_of_week='mon-fri', id="reset_message_limit")
 
     sched.add_job(getSSShortChartBuf, 'cron', minute='24', hour='21', day_of_week='mon-fri', id="ssshortChart")

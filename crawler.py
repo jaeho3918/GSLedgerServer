@@ -130,12 +130,12 @@ XPATHS18 = {
     "AG": '//*[@id="gpxtickerMiddle_price"]'
 }
 
-ssshort_count = 0
-
+ssshort_count = 18
 
 def data18():
     global driver
     global ssshort_count
+
     try:
         select_idx = random.randint(0, len(COUNTRY) - 1)
         vpn_run = subprocess.Popen(["nordvpn", "connect", COUNTRY[select_idx]])
@@ -225,13 +225,13 @@ def data18():
     ref = db.reference(f"/{LASTTIME_DB_PATH}")
     ref.update(last_result)
 
-    light = encrypt(real_result1)  # "open_Database"     "decrypt_Database"
+    # light = encrypt(real_result1)  # "open_Database"     "decrypt_Database"
 
-    ref = db.reference(f"/{OPEN_REALDATA}")
-    ref.update(light["open_Database"])
-
-    ref = db.reference(f"/{CLOSE_REALDATA}")
-    ref.update(light["decrypt_Database"])
+    # ref = db.reference(f"/{OPEN_REALDATA}")
+    # ref.update(light["open_Database"])
+    #
+    # ref = db.reference(f"/{CLOSE_REALDATA}")
+    # ref.update(light["decrypt_Database"])
 
     if ssshort_count >= 3:
         ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
@@ -241,7 +241,7 @@ def data18():
             {real_result["DATE"]: {"DATE": real_result["DATE"], "AU": real_result["AU"], "AG": real_result["AG"]}})
         if len(count) >= 70:
             ref.child(sorted(count.keys())[0]).delete()
-        ssshort_count = 0
+        ssshort_count = 1
     else:
         ssshort_count += 1
 
@@ -808,7 +808,7 @@ def messageLimit():
 if __name__ == "__main__":
     # getShortChartBuf()
     # getLongChartBuf()
-    data18()
+    # data18()
     sched = BackgroundScheduler(timezone="UTC")
     sched.add_job(data18, 'cron', minute='*/3', hour='0-20', day_of_week='mon-fri', id="day")
     sched.add_job(data18, 'cron', minute='*/3', hour='22-23', day_of_week='mon-thu', id="early_start")
@@ -818,7 +818,7 @@ if __name__ == "__main__":
     #               id="chrome_reboot")
 
     sched.add_job(setYES18, 'cron', minute='58', hour='20', day_of_week='mon-fri', id="yes_update")
-    sched.add_job(messageLimit, 'cron', minute='15', hour='22', day_of_week='mon-fri', id="reset_message_limit")
+    sched.add_job(messageLimit, 'cron', minute='15', hour='21', day_of_week='mon-fri', id="reset_message_limit")
 
     sched.add_job(getSSShortChartBuf, 'cron', minute='24', hour='21', day_of_week='mon-fri', id="ssshortChart")
     sched.add_job(getShortChartBuf, 'cron', minute='18', hour='21', day_of_week='mon-fri', id="shortChart")

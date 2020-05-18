@@ -122,7 +122,7 @@ last_result = {}
 #
 #     driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
 
-URL18 = "https://goldprice.org/ko/gold-price.html"
+URL18 = "https://goldprice.org"
 
 XPATHS18 = {
     "AU": '//*[@id="gpxtickerLeft_price"]',

@@ -52,8 +52,6 @@ CHROMDRIVER_PATH = f'./chromedriver'
 #            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
 # }
 
-URL = "https://goldprice.org"
-
 XPATHS = {
     "AU": '//*[@id="gpxtickerLeft_price"]',
     "AG": '//*[@id="gpxtickerMiddle_price"]'
@@ -708,8 +706,8 @@ def encrypt(data_input: dict):
 
 def message():
     print("Message Start", datetime.utcnow())
-
     topic_limit = []
+    topic_limit18 = []
     with open('MESSAGE_LIMIT', 'r') as f:
         rdr = csv.reader(f)
         for line in rdr:  # line[0]:XAG  line[0]: 18.18
@@ -718,6 +716,15 @@ def message():
                     topic_limit.append(False)
                 elif value.strip() == "True":
                     topic_limit.append(True)
+
+    with open('MESSAGE_LIMIT18', 'r') as f:
+        rdr = csv.reader(f)
+        for line in rdr:  # line[0]:XAG  line[0]: 18.18
+            for value in line:
+                if value.strip() == "False":
+                    topic_limit18.append(False)
+                elif value.strip() == "True":
+                    topic_limit18.append(True)
 
     try:
 
@@ -729,11 +736,15 @@ def message():
 
         price_list = [1.0, 2.0, 3.0]
 
+        price_list18 = [3.9, 5.0, 6.0]
+
         AU = (ref['AU'] - ref['YESAU']) / ref['YESAU'] * 100
         AG = (ref['AG'] - ref['YESAG']) / ref['YESAG'] * 100
         RATIO = ref['AU'] / ref['AG']
 
         topic_list = ["Alpha", "Beta", "Gamma"]
+
+        topic_list18 = ["Gamma", "Gamma", "Gamma"]
 
         for idx, price in enumerate(price_list):
 
@@ -803,11 +814,84 @@ def message():
                 # Response is a message ID string.
                 # print('Successfully sent message:', topic_list[idx])
                 # print('global topic_limit:', topic_limit)
+
+        for idx, price18 in enumerate(price_list18):
+
+            body_Slot18 = {}
+
+            if AU >= price18:
+                if not topic_limit18[idx]:
+                    body_Slot18['AU'] = [format(ref['AU'], '.2f'), F"▲ (+{format(AU, '.2f')}%)"]
+                    topic_limit18[idx] = True
+
+            elif AU <= -1 * price18:
+                if not topic_limit18[idx + int(len(topic_limit18) * 1 / 4)]:
+                    body_Slot18['AU'] = [format(ref['AU'], '.2f'), F"▼ ({format(AU, '.2f')}%)"]
+                    topic_limit18[idx + int(len(topic_limit18) * 1 / 4)] = True
+
+            if AG >= price18:
+                if not topic_limit18[idx + int(len(topic_limit18) * 2 / 4)]:
+                    body_Slot18['AG'] = [format(ref['AG'], '.2f'), F"▲ (+{format(AG, '.2f')}%)"]
+                    topic_limit18[idx + int(len(topic_limit18) * 2 / 4)] = True
+
+            elif AG <= -1 * price18:
+                if not topic_limit18[idx + int(len(topic_limit18) * 3 / 4)]:
+                    body_Slot18['AG'] = [format(ref['AG'], '.2f'), F"▼ ({format(AG, '.2f')}%)"]
+                    topic_limit18[idx + int(len(topic_limit18) * 3 / 4)] = True
+
+            body_string18 = ""
+            gold_buf18 = ""
+            silver_buf18 = ""
+
+            with open('MESSAGE_LIMIT18', 'w') as f:
+                wr = csv.writer(f)
+                wr.writerow(topic_limit18)
+
+            if "AU" in body_Slot18.keys():
+                gold_buf18 = f"Gold : ${body_Slot18['AU'][0]}{body_Slot18['AU'][1]}"
+
+            if "AG" in body_Slot18.keys():
+                if "AU" in body_Slot18.keys():
+                    silver_buf18 = f", Silver : ${body_Slot18['AG'][0]}{body_Slot18['AG'][1]}"
+                else:
+                    silver_buf18 = f"Silver : ${body_Slot18['AG'][0]}{body_Slot18['AG'][1]}"
+
+            body_string18 = gold_buf18 + silver_buf18
+            if body_string18 != "":
+                body_string18 = gold_buf18 + silver_buf18 + f" Gold/Silver Ratio {format(RATIO, '.2f')}"
+                # See documentation on defining a message payload.
+                message18 = messaging.Message(
+                    android=messaging.AndroidConfig(
+                        ttl=timedelta(seconds=3600),
+                        priority='normal',
+
+                        notification=messaging.AndroidNotification(
+                            title=title,
+                            body=body_string18,
+                            icon='',
+                            color='#fd6166'
+                            # sound='default'
+                        ),
+                    ),
+
+                    topic=topic_list18[idx]
+                    # token=registration_token
+                )
+                # Send a message18 to the device corresponding to the provided
+                # registration token.
+                response = messaging.send(message18)
+                # Response is a message ID string.
+                # print('Successfully sent message:', topic_list[idx])
+                # print('global topic_limit:', topic_limit)
+
     except:
         print("message error")
 
 def messageLimit():
     with open('MESSAGE_LIMIT', 'w') as f:
+        wr = csv.writer(f)
+        wr.writerow([False, False, False, False, False, False, False, False, False, False, False, False])
+    with open('MESSAGE_LIMIT18', 'w') as f:
         wr = csv.writer(f)
         wr.writerow([False, False, False, False, False, False, False, False, False, False, False, False])
 

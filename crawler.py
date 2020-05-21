@@ -40,24 +40,25 @@ chrome_option.add_argument("--disable-extensions")
 
 # CHROMDRIVER_PATH = f'./chromedriver_win72.exe'
 CHROMDRIVER_PATH = f'./chromedriver'
-# URLS = {
-#     "AU": "https://kr.investing.com/currencies/xau-usd",
-#     "AG": "https://kr.investing.com/currencies/xag-usd"
-# }
-#
-# XPATHS = {
-#     "AU": ['//*[@id="last_last"]',
-#            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
-#     "AG": ['//*[@id="last_last"]',
-#            '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
-# }
-
-XPATHS = {
-    "AU": '//*[@id="gpxtickerLeft_price"]',
-    "AG": '//*[@id="gpxtickerMiddle_price"]'
+URLS = {
+    "AU": "https://www.investing.com/currencies/xau-usd",
+    "AG": "https://www.investing.com/currencies/xag-usd"
 }
 
+XPATHS = {
+    "AU": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]'],
+    "AG": ['//*[@id="last_last"]',
+           '//*[@id="quotes_summary_secondary_data"]/div/ul/li[1]/span[2]']
+}
+
+# XPATHS = {
+#     "AU": '//*[@id="gpxtickerLeft_price"]',
+#     "AG": '//*[@id="gpxtickerMiddle_price"]'
+# }
+
 COUNTRY = ["us", "jp", "uk", "ca", "is", "ch", "fr", "se", "nl"]
+COUNTRY = ["us", "jp",  "ca", "is", "ch", "fr", "se", "nl"]
 
 real_result = {}
 last_result = {}
@@ -87,7 +88,6 @@ logger.addHandler(fileHandler)
 driver = 6
 real_result = {}
 last_result = {}
-
 
 # def chrome_reboot():
 #     global real_result
@@ -129,54 +129,97 @@ XPATHS18 = {
 
 ssshort_count = 18
 
+EMERGENCY = 18    #  noen : 18 tkdfkjls : 6
+
 
 def data18():
     global driver
     global ssshort_count
 
-    try:
-        select_idx = random.randint(0, len(COUNTRY) - 1)
-        vpn_run = subprocess.Popen(["nordvpn", "connect", COUNTRY[select_idx]])
-        vpn_run.wait(3 * 60)
-        time.sleep(random.randint(6, 18))
+    EMERGENCY = 18
+    real_result = {}
 
-        if driver == 6:
-            driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+    select_idx = random.randint(0, len(COUNTRY) - 1)
+    vpn_run = subprocess.Popen(["nordvpn", "connect", COUNTRY[select_idx]])
+    vpn_run.wait(3 * 60)
+    time.sleep(random.randint(6, 6))
 
-        print("crawler Start : ", datetime.utcnow())
+    if driver == 6:
+        driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+        if EMERGENCY == 6:
+            for idx in range(2):
+                driver.execute_script('window.open("about:blank", "_blank");')
+            tabs = driver.window_handles
+            idx1 = 0
+            for key, value in URLS.items():
+                driver.switch_to_window(tabs[idx1])
+                driver.get(value)
+                idx1 += 1
+                time.sleep(random.randint(6, 6))
+
+    if EMERGENCY == 18:
+        print("NOT E Start : ", datetime.utcnow())
         real_result = {}
         last_result = {}
-
         driver.get(URL18)
+
         real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
         real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
         # print(result[key])
 
+        with open('YES.csv', 'r') as f:
+            rdr = csv.reader(f)
+            for line in rdr:  # line[0]:XAG  line[0]: 18.18
+                real_result["YES" + line[0]] = float(line[1])
         time.sleep(random.randint(18, 60))
 
-    except:
-        logger.error("crawling.error")
+    elif EMERGENCY == 6:
+        print("E Start : ", datetime.utcnow())
+        real_result = {}
+        last_result = {}
+        result = {}
+        tabs = driver.window_handles
+        idx1 = 0
 
-    finally:
-        driver.close()
-        driver.quit()
-        driver = 6
+        for key, value in URLS.items():
+            driver.switch_to_window(tabs[idx1])
+            idx1 += 1
 
-        vpn_quit = subprocess.Popen(["nordvpn", "disconnect"])
-        vpn_quit.wait(60)
+            for idx, xpath in enumerate(XPATHS[key]):
+                result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+                # print(result[key])
+
+                if len(key) == 2:
+                    if idx == 1:
+                        print(key ,"YES@@@: ",result[key])
+                        real_result[f"YES{key}"] = float(result[key])
+                    else:
+                        print(key ,"@@: ",result[key])
+                        real_result[key] = float(result[key])
+
+        time.sleep(random.randint(18, 60))
+
+    driver.close()
+    driver.quit()
+    driver = 6
+
+    vpn_quit = subprocess.Popen(["nordvpn", "disconnect"])
+    vpn_quit.wait(60)
 
     response = requests.get(URL)
     for key, value in response.json()["quotes"].items():
         if (key[-3:] == "XAU") | (key[-3:] == "XAG"):
             # if (key[-3:] == "XAU"):
+            # print("test currency layor",real_result["AG"],"Result", ((1 / value) + real_result[key[-2:]]) / 2)
             real_result[key[-2:]] = ((1 / value) + real_result[key[-2:]]) / 2
         else:
             real_result[key[-3:]] = value
+    #
+    # print(real_result["AG"])
 
-    with open('YES.csv', 'r') as f:
-        rdr = csv.reader(f)
-        for line in rdr:  # line[0]:XAG  line[0]: 18.18
-            real_result[line[0]] = float(line[1])
+############################
+
+
 
     # except:
     #     logger.info("Crawler ERROR")
@@ -231,13 +274,13 @@ def data18():
     # ref = db.reference(f"/{CLOSE_REALDATA}")
     # ref.update(light["decrypt_Database"])
 
-    if ssshort_count >= 3:
+    if ssshort_count >= 1:
         ref = db.reference(f"/{REALTIMESTACK_DB_PATH}")
         count = ref.get()
         # ref.update({real_result["DATE"]: real_result})
         ref.update(
             {real_result["DATE"]: {"DATE": real_result["DATE"], "AU": real_result["AU"], "AG": real_result["AG"]}})
-        if len(count) >= 70:
+        if len(count) >= 110 :
             ref.child(sorted(count.keys())[0]).delete()
         ssshort_count = 1
     else:
@@ -247,7 +290,8 @@ def data18():
 
     message()
 
-    # time.sleep(random.randint(66, 111))
+    time.sleep(random.randint(66, 111))
+
 
 # def driver_setting():
 #     global real_result
@@ -469,6 +513,7 @@ def closeTime(now):
 
 
 def setYES18():
+    EMERGENCY = 18
     global driver
     try:
         select_idx = random.randint(0, len(COUNTRY) - 1)
@@ -478,15 +523,53 @@ def setYES18():
 
         if driver == 6:
             driver = webdriver.Chrome(executable_path=CHROMDRIVER_PATH, chrome_options=chrome_option)
+            if EMERGENCY == 6:
+                for idx in range(2):
+                    driver.execute_script('window.open("about:blank", "_blank");')
+                tabs = driver.window_handles
+                idx1 = 0
+                for key, value in URLS.items():
+                    driver.switch_to_window(tabs[idx1])
+                    driver.get(value)
+                    idx1 += 1
+
+        if EMERGENCY == 18:
+            print("NOT E Start : ", datetime.utcnow())
+            real_result = {}
+            last_result = {}
+            driver.get(URL18)
+
+            real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
+            real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
+            # print(result[key])
+            time.sleep(random.randint(18, 60))
+
+        elif EMERGENCY == 6:
+            print("E Start : ", datetime.utcnow())
+            real_result = {}
+            last_result = {}
+            result = {}
+            tabs = driver.window_handles
+            idx1 = 0
+
+            for key, value in URLS.items():
+                driver.switch_to_window(tabs[idx1])
+                idx1 += 1
+
+                for idx, xpath in enumerate(XPATHS[key]):
+                    result[key] = float(driver.find_element_by_xpath(XPATHS[key][idx]).text.replace(",", ""))
+                    # print(result[key])
+
+                    if len(key) == 2:
+                        if idx == 1:
+                            print(key, "YES@@@: ", result[key])
+                            real_result[f"YES{key}"] = float(result[key])
+                        else:
+                            print(key, "@@: ", result[key])
+                            real_result[key] = float(result[key])
+
 
         print("yes setting : ", datetime.utcnow())
-
-        real_result = {}
-
-        driver.get(URL18)
-        real_result["AU"] = float(driver.find_element_by_xpath(XPATHS18["AU"]).text.replace(",", ""))
-        real_result["AG"] = float(driver.find_element_by_xpath(XPATHS18["AG"]).text.replace(",", ""))
-        # print(result[key])
 
         response = requests.get(URL)
         f = open('YES.csv', 'w', newline='')
@@ -560,6 +643,7 @@ def getShortChartBuf():
                                               })
     logger.info("Crawler Upload")
 
+
 def getSSShortChartBuf():
     limit_len = 80
     print("Short Chart", datetime.utcnow())
@@ -611,6 +695,7 @@ def getSSShortChartBuf():
                                                 "DATE": date_list[:-1]
                                                 })
     logger.info("Crawler Upload")
+
 
 def getLongChartBuf():
     start_Date = 19920918
@@ -666,6 +751,7 @@ def getLongChartBuf():
                                              "DATE": date_list
                                              })
 
+
 def encrypt(data_input: dict):
     slot = {
         "AU": 0,
@@ -703,6 +789,7 @@ def encrypt(data_input: dict):
     slot["DATE"] = date_slot
 
     return {"open_Database": slot, "decrypt_Database": decrypt}
+
 
 def message():
     print("Message Start", datetime.utcnow())
@@ -887,6 +974,7 @@ def message():
     except:
         print("message error")
 
+
 def messageLimit():
     with open('MESSAGE_LIMIT', 'w') as f:
         wr = csv.writer(f)
@@ -899,11 +987,12 @@ def messageLimit():
 if __name__ == "__main__":
     # getShortChartBuf()
     # getLongChartBuf()
-    # data18()
+    data18()
+    # setYES18()
     sched = BackgroundScheduler(timezone="UTC")
-    sched.add_job(data18, 'cron', minute='*/3', hour='0-20', day_of_week='mon-fri', id="day")
-    sched.add_job(data18, 'cron', minute='*/3', hour='22-23', day_of_week='mon-thu', id="early_start")
-    sched.add_job(data18, 'cron', minute='*/3', hour='22-23', day_of_week='sun', id="sun_early_start")
+    sched.add_job(data18, 'cron', minute='*/10', hour='0-20', day_of_week='mon-fri', id="day")
+    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='mon-thu', id="early_start")
+    sched.add_job(data18, 'cron', minute='*/10', hour='22-23', day_of_week='sun', id="sun_early_start")
 
     # sched.add_job(chrome_reboot, 'cron', minute='18', second='36', hour='*/3', day_of_week='mon-fri',
     #               id="chrome_reboot")
